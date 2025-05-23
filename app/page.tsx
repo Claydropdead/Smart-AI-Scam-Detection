@@ -40,14 +40,13 @@ export default function LandingPage() {
           </div>
         </div>
       </nav>{/* Hero Section */}
-      <main className="flex-grow container mx-auto px-4 pt-28 pb-12 flex flex-col items-center text-center">
-        <div className="max-w-3xl">
+      <main className="flex-grow container mx-auto px-4 pt-28 pb-12 flex flex-col items-center text-center">        <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
-            Advanced AI-Powered <span className="text-sky-400">Scam Detection</span>
+            Advanced AI-Powered <span className="text-sky-400">Threat Detection</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-300 mb-8">
-            Our intelligent system analyzes text messages, emails, and other content to identify potential scams, helping you stay safe from fraudulent activities. Powered by cutting-edge AI, we provide detailed insights and actionable advice.
-          </p>          <div className="flex flex-col space-y-4 items-center">
+            Our intelligent system analyzes text messages, emails, images, and other content to identify scams and cyber threats, helping you stay protected from all forms of digital attacks. Powered by cutting-edge AI, we detect phishing, malware, identity theft, and other security risks with detailed insights and actionable advice.
+          </p><div className="flex flex-col space-y-4 items-center">
             <Link href="/analysis" className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-xl transition-transform transform hover:scale-105 duration-150">
               Get Started - Analyze Now
             </Link>
@@ -75,7 +74,7 @@ export default function LandingPage() {
             <div className="text-3xl mb-3 text-sky-400">📊</div>
             <h3 className="text-xl font-semibold mb-2">Structured Risk Assessment</h3>
             <p className="text-slate-400 text-sm">
-              Receive a clear risk status (Low, Medium, High), probability score, and AI confidence level for each analysis.
+              Receive a clear risk status (Low, Moderate, High, Very High), exact probability percentage, and AI confidence level for each analysis.
             </p>
           </div>
           {/* Feature 3 */}
@@ -85,6 +84,27 @@ export default function LandingPage() {
             <p className="text-slate-400 text-sm">
               Get explanations in both English and Tagalog, with advice and reporting channels relevant to the Philippines.
             </p>
+          </div>
+        </div>
+        
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+          {/* Feature 4 */}
+          <div className="bg-gradient-to-br from-indigo-900/40 to-slate-800/90 p-6 rounded-xl shadow-2xl border border-indigo-700/50 hover:border-indigo-500 transition-all duration-300">
+            <div className="text-3xl mb-3 text-indigo-400">🔒</div>
+            <h3 className="text-xl font-semibold mb-2">Advanced Scam & Threat Detection</h3>
+            <p className="text-slate-400 text-sm">
+             Our AI analyzes messages to detect and flag potential digital threats before you fall victim. By evaluating tone, language patterns, and known scam tactics, we help you identify risks—whether it's a suspicious message, fake offer, or social engineering attempt.
+            </p>
+            <a href="#cyber-threats" className="inline-block mt-3 text-sm text-indigo-400 hover:text-indigo-300">Learn more about our advanced protection →</a>
+          </div>
+          {/* Feature 5 */}
+          <div className="bg-gradient-to-br from-sky-900/40 to-slate-800/90 p-6 rounded-xl shadow-2xl border border-sky-700/50 hover:border-sky-500 transition-all duration-300">
+            <div className="text-3xl mb-3 text-sky-400">🖼️</div>
+            <h3 className="text-xl font-semibold mb-2">Image Analysis</h3>
+            <p className="text-slate-400 text-sm">
+              Upload screenshots of suspicious websites, QR codes, or any image-based content for analysis. Our AI can detect visual manipulation, fake UIs, doctored images, and other image-based threats.
+            </p>
+            <a href="#image-analysis" className="inline-block mt-3 text-sm text-sky-400 hover:text-sky-300">See how image analysis works →</a>
           </div>
         </div>
       </main>      {/* Common Scams Section */}
@@ -161,7 +181,94 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-      </section>      {/* How It Works Section */}
+      </section>      {/* Cyber Attack Detection Section */}
+      <section id="cyber-threats" className="py-16 bg-gradient-to-br from-indigo-900 to-slate-900">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3 text-center">Protects You Against All Forms of Digital Attacks</h2>
+          <p className="text-center text-slate-300 mb-12 max-w-3xl mx-auto">
+            Our system uses cutting-edge AI to detect and block a wide range of cybersecurity threats designed to compromise your privacy, data, and safety—before they reach you.
+          </p>
+          
+          <div className="max-w-5xl mx-auto bg-slate-800/40 rounded-2xl p-6 border border-indigo-700/30 mb-10">
+            <h3 className="text-2xl font-semibold mb-4 text-center text-white">🔍 Detectable Threat Types:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Threat Type 1 */}
+              <div className="bg-gradient-to-br from-blue-900/30 to-transparent p-4 rounded-xl border border-blue-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-blue-400 mt-0.5">🎣</div>
+                <div>
+                  <h4 className="font-semibold text-blue-300 mb-2">Phishing & Smishing Attacks</h4>
+                  <p className="text-slate-300 text-sm">Fake emails and text messages pretending to be banks, delivery companies, or government institutions.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 2 */}
+              <div className="bg-gradient-to-br from-purple-900/30 to-transparent p-4 rounded-xl border border-purple-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-purple-400 mt-0.5">🧠</div>
+                <div>
+                  <h4 className="font-semibold text-purple-300 mb-2">Social Engineering Scams</h4>
+                  <p className="text-slate-300 text-sm">Deceptive messages that manipulate emotion to trick users into revealing sensitive information.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 3 */}
+              <div className="bg-gradient-to-br from-amber-900/30 to-transparent p-4 rounded-xl border border-amber-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-amber-400 mt-0.5">🎁</div>
+                <div>
+                  <h4 className="font-semibold text-amber-300 mb-2">Fake Giveaways & Prizes</h4>
+                  <p className="text-slate-300 text-sm">Scams that claim you've won something and ask for personal or payment information.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 4 */}
+              <div className="bg-gradient-to-br from-emerald-900/30 to-transparent p-4 rounded-xl border border-emerald-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-emerald-400 mt-0.5">💰</div>
+                <div>
+                  <h4 className="font-semibold text-emerald-300 mb-2">Investment & Cryptocurrency Scams</h4>
+                  <p className="text-slate-300 text-sm">Suspicious offers promising guaranteed returns or urgent investment "opportunities."</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 5 */}
+              <div className="bg-gradient-to-br from-red-900/30 to-transparent p-4 rounded-xl border border-red-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-red-400 mt-0.5">🦠</div>
+                <div>
+                  <h4 className="font-semibold text-red-300 mb-2">Malicious Links & Attachments</h4>
+                  <p className="text-slate-300 text-sm">Dangerous files or URLs that could install spyware, ransomware, or keyloggers.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 6 */}
+              <div className="bg-gradient-to-br from-sky-900/30 to-transparent p-4 rounded-xl border border-sky-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-sky-400 mt-0.5">🎭</div>
+                <div>
+                  <h4 className="font-semibold text-sky-300 mb-2">Impersonation & Identity Fraud</h4>
+                  <p className="text-slate-300 text-sm">Messages pretending to be from your boss, a loved one, or a company to trick you into sending money or information.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 7 */}
+              <div className="bg-gradient-to-br from-fuchsia-900/30 to-transparent p-4 rounded-xl border border-fuchsia-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-fuchsia-400 mt-0.5">📱</div>
+                <div>
+                  <h4 className="font-semibold text-fuchsia-300 mb-2">QR Code & Barcode Traps</h4>
+                  <p className="text-slate-300 text-sm">Fraudulent images leading to phishing sites or malware downloads.</p>
+                </div>
+              </div>
+              
+              {/* Threat Type 8 */}
+              <div className="bg-gradient-to-br from-orange-900/30 to-transparent p-4 rounded-xl border border-orange-700/30 flex items-start">
+                <div className="text-3xl mr-3 text-orange-400 mt-0.5">🔐</div>
+                <div>
+                  <h4 className="font-semibold text-orange-300 mb-2">Tech Support or Device Access Scams</h4>
+                  <p className="text-slate-300 text-sm">Fraudsters pose as IT staff, customer support, or software providers, urging users to install remote access apps or "security software"—allowing attackers to control your device or steal data.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* How It Works Section */}
       <section id="how-it-works" className="py-16 bg-slate-800/50">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-10">How It Works</h2>
@@ -184,9 +291,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      
-      {/* Image Analysis Highlight */}
-      <section className="py-16 bg-slate-800">
+        {/* Image Analysis Highlight */}
+      <section id="image-analysis" className="py-16 bg-slate-800">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center gap-8 max-w-5xl mx-auto">
             <div className="w-full md:w-1/2 order-2 md:order-1">
@@ -238,81 +344,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      
-      {/* Testimonials Section */}
-      <section className="py-16 bg-slate-900">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3 text-center">User Testimonials</h2>
-          <p className="text-center text-slate-300 mb-12 max-w-3xl mx-auto">Hear from people who've used ScamDetect AI to stay safe online.</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-slate-800/70 p-6 rounded-xl shadow-md border border-slate-700">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-sky-500 rounded-full flex items-center justify-center text-white font-bold text-xl">M</div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Maria Santos</h4>
-                  <p className="text-sm text-slate-400">Manila</p>
-                </div>
-              </div>
-              <p className="text-slate-300 italic">"I almost fell for a bank phishing scam until ScamDetect AI analyzed the text message and warned me it was high risk. The detailed explanation helped me understand exactly what made it suspicious."</p>
-              <div className="mt-3 text-yellow-400">★★★★★</div>
-            </div>
-            
-            <div className="bg-slate-800/70 p-6 rounded-xl shadow-md border border-slate-700">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-sky-500 rounded-full flex items-center justify-center text-white font-bold text-xl">J</div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Juan Reyes</h4>
-                  <p className="text-sm text-slate-400">Cebu City</p>
-                </div>
-              </div>
-              <p className="text-slate-300 italic">"The bilingual support is fantastic. My parents don't speak English well, so having explanations in Tagalog helped them understand why they shouldn't reply to a suspicious message they received."</p>
-              <div className="mt-3 text-yellow-400">★★★★★</div>
-            </div>
-            
-            <div className="bg-slate-800/70 p-6 rounded-xl shadow-md border border-slate-700">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-sky-500 rounded-full flex items-center justify-center text-white font-bold text-xl">A</div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Angelica Cruz</h4>
-                  <p className="text-sm text-slate-400">Davao</p>
-                </div>
-              </div>
-              <p className="text-slate-300 italic">"Not only did ScamDetect AI identify a job scam in an email I received, but it also provided me with information on where to report it. The advice on how to avoid similar scams was very helpful."</p>
-              <div className="mt-3 text-yellow-400">★★★★★</div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Statistics Section */}
-      <section className="py-16 bg-gradient-to-br from-slate-900 to-sky-900">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3 text-center">Making a Difference</h2>
-          <p className="text-center text-slate-300 mb-12 max-w-3xl mx-auto">ScamDetect AI has helped thousands of Filipinos stay safe from scams through accurate detection and education.</p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <div className="bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm border border-sky-500/30 text-center">
-              <div className="text-4xl font-bold text-sky-400 mb-2">98%</div>
-              <p className="text-slate-300 text-sm">Detection Accuracy</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm border border-sky-500/30 text-center">
-              <div className="text-4xl font-bold text-sky-400 mb-2">5,000+</div>
-              <p className="text-slate-300 text-sm">Scams Identified</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm border border-sky-500/30 text-center">
-              <div className="text-4xl font-bold text-sky-400 mb-2">₱10M+</div>
-              <p className="text-slate-300 text-sm">Potential Losses Prevented</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm border border-sky-500/30 text-center">
-              <div className="text-4xl font-bold text-sky-400 mb-2">2</div>
-              <p className="text-slate-300 text-sm">Supported Languages</p>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* CTA Banner */}
+        {/* CTA Banner */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-sky-500 relative overflow-hidden">
         <div className="absolute inset-0">
           <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
@@ -361,7 +393,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-slate-700 mt-4 pt-4 text-center">
-            <p className="text-slate-400 text-sm">&copy; 2023 ScamDetect AI. All rights reserved.</p>
+            <p className="text-slate-400 text-sm">&copy; 2025 ScamDetect AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
