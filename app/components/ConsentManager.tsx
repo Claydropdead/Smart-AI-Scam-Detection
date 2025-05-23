@@ -27,13 +27,12 @@ export default function ConsentManager() {
       clearInterval(interval);
     };
   }, []);
-
   // Format date for display
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
       return date.toLocaleString();
-    } catch (e) {
+    } catch (_) {
       return 'Invalid date';
     }
   };

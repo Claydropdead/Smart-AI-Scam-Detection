@@ -1,7 +1,6 @@
 // This is a Next.js page component for the landing page of the ScamDetect AI application.
 "use client";
 import Link from 'next/link';
-import Image from 'next/image';
 
 export default function LandingPage() {
   return (

@@ -350,8 +350,9 @@ export default function Home() {
                     )}
                   </div>
                 ) : (
-                  <div className="relative">
-                    <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                  <div className="relative">                    <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                      {/* Using img tag is acceptable for user-uploaded images with dynamic sources */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imagePreview}
                         alt="Preview"
