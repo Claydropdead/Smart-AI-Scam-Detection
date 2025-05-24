@@ -27,6 +27,7 @@ interface ScamDetectionResponse {
   true_vs_false: string; // How to differentiate between true and false information (English)
   true_vs_false_tagalog: string; // How to differentiate between true and false information (Tagalog)
   image_analysis?: string; // Optional analysis of image content if provided
+  audio_analysis?: string; // Optional analysis of audio content if provided
   raw_gemini_response?: string; // For debugging
 }
 
@@ -118,9 +119,181 @@ function parseGeminiResponse(apiResponse: GeminiApiResponse): ScamDetectionRespo
 }
 
 
-async function analyzeWithGemini(content: string, imageBase64?: string): Promise<ScamDetectionResponse> {  if (!GEMINI_API_URL) { // Check if the URL is empty (meaning API key was missing)
+// Function for audio analysis with Gemini
+async function analyzeWithGeminiAudio(content: string, audioBase64: string, imageBase64?: string): Promise<ScamDetectionResponse> {
+  if (!GEMINI_API_URL) {
     throw new Error('Gemini API URL is not configured due to missing API key.');
-  }    const prompt = `Analyze the ${content.trim() ? "following text" : "provided image"} to determine if it is a scam. The user is likely in the Philippines.
+  }
+
+  const prompt = `Analyze the provided audio recording to determine if it contains a scam or fraudulent content. The user is likely in the Philippines.
+${content.trim() ? `Additional context provided: "${content}"` : "No additional text context provided."}
+${imageBase64 ? "An image has also been provided for analysis alongside the audio." : ""}
+
+CRITICAL ASSESSMENT CRITERIA FOR VOICE RECORDINGS:
+Analyze the voice recording for scam risk, considering:
+1. Tone and urgency in the voice
+2. Pressure tactics and manipulation techniques
+3. Claims made in the recording (financial, prizes, threats, etc.)
+4. Signs of social engineering or phishing attempts
+5. Voice deepfakes or impersonation attempts
+
+VERY IMPORTANT: Apply careful nuanced analysis, focusing on voice-based scam techniques common in the Philippines such as:
+- Voice phishing (vishing)
+- Fake customer service or tech support calls
+- Impersonation of government officials or bank representatives
+- High-pressure sales tactics
+- Urgent requests for personal or financial information
+
+### Risk Assessment Framework (BASED ON SPECIFIC INDICATORS):
+- Apply this risk probability scale:
+  - 0-24% (LOW RISK): Normal conversation, no suspicious elements
+  - 25-49% (MODERATE RISK): Possibly suspicious content but not clearly malicious
+  - 50-74% (HIGH RISK): Likely a scam with clear risk indicators present
+  - 75-100% (VERY HIGH RISK): Dangerous content with multiple strong scam indicators
+
+- HANDLING AMBIGUOUS RECORDINGS:
+  - For unclear recordings WITHOUT any risk indicators:
+    - Classify as LOW RISK (0-24%) by default
+    - Status should be "Low Risk Detected" 
+    - Assessment should be "Normal Conversation" or "Regular Message"
+  
+  - For ambiguous recordings:
+    - Only assign MODERATE RISK (25-49%) if additional context would help determine intent
+    - Status should be "Requires More Context" if truly ambiguous
+    - Explain what specific information would clarify the risk level
+    - AI confidence should be "Low" to reflect uncertainty
+
+### Specific Voice Scam Indicators:
+- AGGRESSIVE PERSUASION TECHNIQUES:
+  - Urgency in voice tone: speaking quickly, sounding alarmed
+  - Threats delivered with authoritative tone
+  - High-pressure sales tactics
+  - These justify MEDIUM to HIGH risk (25-74% depending on severity)
+
+- FINANCIAL ELEMENTS:
+  - Requests for money transfers, cryptocurrency, or gift cards
+  - Promises of unrealistic returns or unexpected winnings
+  - Requests for banking information or payment details
+  - Investment opportunities with guaranteed returns
+  - These justify HIGH to VERY HIGH risk (50-100% depending on directness)
+
+- IMPERSONATION & IDENTITY FRAUD:
+  - Claims to represent government agencies, banks, or well-known companies
+  - Requests for credentials, OTPs, or personal identification numbers
+  - Fake technical support claims requiring immediate action
+  - These justify HIGH to VERY HIGH risk (50-100% depending on sophistication)
+
+- KNOWN VOICE SCAM PATTERNS:
+  - Impersonation of government officials or financial institution representatives
+  - Claims of fraudulent activity on accounts requiring verification
+  - Claims of suspended services requiring immediate payment
+  - These justify HIGH to VERY HIGH risk (50-100% if clearly matching patterns)
+
+FINAL RISK CATEGORIZATION RULES:
+1. DEFAULT TO LOW RISK (0-24%) for normal conversation with no risk indicators
+2. Only assign MODERATE RISK (25-49%) if recording has mild suspicious elements
+3. Only assign HIGH RISK (50-74%) if the recording contains clear scam indicators
+4. Only assign VERY HIGH RISK (75-100%) if multiple strong scam indicators are present
+
+Respond with a single, minified JSON object matching this exact structure, and nothing else. Do not include any text before or after the JSON object (e.g. no "\`\`\`json" markers):
+{
+  "status": "string (Use exactly one of these: 'Normal Conversation' for typical exchanges like greetings; 'Low Risk Detected' for safe recordings; 'Medium Risk Detected' for recordings with some concerning elements; 'High Risk Detected' for clear scam content; 'Requires More Context' only for genuinely ambiguous recordings that need more information)",
+  "assessment": "string (Use exactly one of these: 'Regular Message' for greetings and common responses; 'Likely Not a Scam' for safe content; 'Possibly Suspicious' for unclear intent; 'Likely a Scam' for risky content; 'Highly Likely a Scam' for dangerous content; 'Requires More Context' only if additional information would significantly change the risk assessment)",
+  "scam_probability": "string representing percentage based on risk level: 0-24% for Low Risk (not considered a scam), 25-49% for Moderate Risk (possibly suspicious), 50-74% for High Risk (likely a scam), 75-100% for Very High Risk (highly likely a scam)",
+  "ai_confidence": "string (Must be one of: 'Low', 'Medium', 'High' - use 'High' for clear cases, 'Low' only when truly uncertain)",
+  "explanation_english": "string (VERY DETAILED and comprehensive explanation in English, tailored to the analyzed recording. Always include: 1) Why the recording received this risk classification, 2) Which specific indicators were present or absent, 3) For low risk recordings, explicitly state why they are safe, 4) For higher risk recordings, identify exactly which elements raised concerns.)",
+  "explanation_tagalog": "string (VERY DETAILED and comprehensive paliwanag sa Tagalog, angkop sa sinuring recording.)",
+  "audio_analysis": "string (Detailed analysis of the voice recording, addressing tone, content, suspicious elements, and potential transcription of key parts)",
+  "image_analysis": "string (If image is provided, analyze the image content for potential scam indicators. If no image is provided, omit this field)",
+  "advice": "string (specific advice related to the analyzed recording, in English. For vague recordings, suggest specific questions the user should ask to determine legitimacy)",  
+  "how_to_avoid_scams": [
+    "string (professional cybersecurity tip 1 in Tagalog - provide expert-level cybersecurity advice SPECIFIC TO VOICE-BASED SCAMS)",
+    "string (professional cybersecurity tip 2 in Tagalog - provide expert-level cybersecurity advice SPECIFIC TO VOICE-BASED SCAMS)",
+    "string (professional cybersecurity tip 3 in Tagalog - provide expert-level cybersecurity advice SPECIFIC TO VOICE-BASED SCAMS)",
+    "string (professional cybersecurity tip 4 in Tagalog - provide expert-level cybersecurity advice SPECIFIC TO VOICE-BASED SCAMS)",
+    "string (professional cybersecurity tip 5 in Tagalog - provide expert-level cybersecurity advice SPECIFIC TO VOICE-BASED SCAMS)"
+  ],
+  "where_to_report": [
+    {"name": "Philippine National Police Anti-Cybercrime Group (PNP ACG)", "link": "https://www.pnpacg.ph/"},
+    {"name": "National Bureau of Investigation Cybercrime Division (NBI CCD)", "link": "https://www.nbi.gov.ph/cybercrime/"},
+    {"name": "Department of Trade and Industry (DTI)", "link": "https://www.dti.gov.ph/konsyumer/complaints/"},
+    {"name": "National Privacy Commission (NPC)", "link": "https://www.privacy.gov.ph/complaints-assisted/"}
+  ],
+  "what_to_do_if_scammed": [
+    "string (professional step 1 to take if you've been scammed via voice call - provide expert-level advice in English)",
+    "string (professional step 2 to take if you've been scammed via voice call - provide expert-level advice in English)",
+    "string (professional step 3 to take if you've been scammed via voice call - provide expert-level advice in English)",
+    "string (professional step 4 to take if you've been scammed via voice call - provide expert-level advice in English)",
+    "string (professional step 5 to take if you've been scammed via voice call - provide expert-level advice in English)"
+  ],
+  "what_to_do_if_scammed_tagalog": [
+    "string (professional step 1 to take if you've been scammed via voice call - provide expert-level advice in TAGALOG)",
+    "string (professional step 2 to take if you've been scammed via voice call - provide expert-level advice in TAGALOG)",
+    "string (professional step 3 to take if you've been scammed via voice call - provide expert-level advice in TAGALOG)",
+    "string (professional step 4 to take if you've been scammed via voice call - provide expert-level advice in TAGALOG)",
+    "string (professional step 5 to take if you've been scammed via voice call - provide expert-level advice in TAGALOG)"
+  ],
+  "true_vs_false": "string (detailed explanation in ENGLISH on how to differentiate between legitimate and scam voice calls)",
+  "true_vs_false_tagalog": "string (detailed explanation in TAGALOG on how to differentiate between legitimate and scam voice calls)"
+}`;
+
+  try {
+    // Prepare the request body
+    const requestBody: any = {
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }]
+    };
+
+    // Add audio data to the request
+    requestBody.contents[0].parts.push({
+      inline_data: {
+        mime_type: 'audio/webm', // Webm is the format we use for browser recordings
+        data: audioBase64
+      }
+    });
+
+    // If image is provided, add it to the request too
+    if (imageBase64) {
+      requestBody.contents[0].parts.push({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data: imageBase64
+        }
+      });
+    }
+
+    const response = await fetch(GEMINI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Gemini API Error Response for Audio Analysis:', errorBody);
+      throw new Error(`Gemini API request failed with status ${response.status}: ${errorBody}`);
+    }
+
+    const data: GeminiApiResponse = await response.json();
+    console.log('Gemini API Full Raw Response Object for Audio Analysis:', JSON.stringify(data, null, 2));
+    
+    return parseGeminiResponse(data);
+
+  } catch (error) {
+    console.error('Error calling Gemini API for audio analysis:', error);
+    throw error; // Re-throw the error to be caught by the POST handler
+  }
+}
+
+async function analyzeWithGemini(content: string, imageBase64?: string): Promise<ScamDetectionResponse> {  
+  if (!GEMINI_API_URL) { // Check if the URL is empty (meaning API key was missing)
+    throw new Error('Gemini API URL is not configured due to missing API key.');
+  }const prompt = `Analyze the ${content.trim() ? "following text" : "provided image"} to determine if it is a scam. The user is likely in the Philippines.
 ${content.trim() ? `Text to analyze: "${content}"` : "No text provided for analysis."}
 ${imageBase64 ? (content.trim() ? "An image has also been provided for analysis." : "Only an image has been provided for analysis.") : ""}
 
@@ -312,16 +485,25 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const { content, imageBase64 } = body;  // Accept optional image data    // Allow content to be empty if an image is provided
-    if ((!content || typeof content !== 'string') && !imageBase64) {
-      return NextResponse.json({ message: 'Either text content or an image is required' }, { status: 400 });
+    const { content, imageBase64, audioBase64 } = body;  // Accept optional image and audio data    
+    
+    // Allow content to be empty if an image or audio is provided
+    if ((!content || typeof content !== 'string') && !imageBase64 && !audioBase64) {
+      return NextResponse.json({ message: 'Either text content, image, or audio recording is required' }, { status: 400 });
     }
     
-    // Use empty string if content is not provided but image is
-    const textContent = content || '';    // Call your Gemini API integration with optional image and possibly empty text
-    const analysis = await analyzeWithGemini(textContent, imageBase64);
-
-    return NextResponse.json(analysis, { status: 200 });
+    // Use empty string if content is not provided but image/audio is
+    const textContent = content || '';
+    
+    if (audioBase64) {
+      // Handle audio analysis specially
+      const analysis = await analyzeWithGeminiAudio(textContent, audioBase64, imageBase64);
+      return NextResponse.json(analysis, { status: 200 });
+    } else {
+      // Standard text/image analysis
+      const analysis = await analyzeWithGemini(textContent, imageBase64);
+      return NextResponse.json(analysis, { status: 200 });
+    }
 
   } catch (error: any) {
     console.error('Error in /api/detect-scam:', error);
