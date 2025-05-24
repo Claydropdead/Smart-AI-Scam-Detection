@@ -41,11 +41,10 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   
   // Get UI styles based on calculated risk percentage to ensure consistency
   const statusStyles = getColorByPercentage(finalRiskPercentage);
-  
-  // Extract any additional indicators from the AI explanation
+    // Extract any additional indicators from the AI explanation
   const extractedIndicators = extractScamIndicators(analysisResult.explanation_english);
   
-  // Get all detected indicators
+  // Get all detected indicators from the standard pattern matching
   const detectedIndicators = Object.entries(indicators)
     .filter(([_, data]) => data.detected)
     .map(([name, _]) => name)
@@ -54,7 +53,45 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       return (indicators[b].severity || 0) - (indicators[a].severity || 0);
     });
   
-  // If no standard indicators were detected but we have AI-extracted ones
+  // Add enhanced keywords from the API analysis if available
+  if (analysisResult.keywords && analysisResult.keywords.length > 0) {    // Process special keywords for display
+    const displayKeywordMap: {[key: string]: string} = {
+      'suspicious-url': 'Suspicious URL Detected',
+      'malicious-link': 'Potentially Malicious Link',
+      'isolated-link': 'Isolated Link (Limited Context)',
+      'limited-context': 'Limited Context Analysis',
+      'isolated-legitimate-link': 'Legitimate Website Link',
+      'isolated-suspicious-link': 'Suspicious Isolated Link',
+      'legitimate-financial-website': 'Legitimate Financial Website'
+    };
+    
+    // Process API keywords and add them to detectedIndicators
+    analysisResult.keywords.forEach((keyword: string) => {
+      // Check if we have a display mapping for this keyword
+      if (displayKeywordMap[keyword]) {
+        detectedIndicators.push(displayKeywordMap[keyword]);
+      }
+      // For verified site keywords (e.g., 'verified-landbank')
+      else if (keyword.startsWith('verified-')) {
+        const siteName = keyword.substring(9); // Remove 'verified-' prefix
+        detectedIndicators.push(`Verified ${siteName.charAt(0).toUpperCase() + siteName.slice(1)} Site`);
+      }
+      // Otherwise use the keyword with capitalization
+      else {
+        const formattedKeyword = keyword
+          .split('-')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        // Only add if not already present
+        if (!detectedIndicators.includes(formattedKeyword)) {
+          detectedIndicators.push(formattedKeyword);
+        }
+      }
+    });
+  }
+  
+  // If no indicators were detected but we have AI-extracted ones
   if (detectedIndicators.length === 0 && extractedIndicators.length > 0) {
     // Use the first 3 extracted ones as simple phrases
     for (let i = 0; i < Math.min(3, extractedIndicators.length); i++) {
@@ -69,6 +106,10 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       }
     }
   }
+  
+  // Remove duplicates and limit to reasonable number
+  const uniqueIndicators = [...new Set(detectedIndicators)];
+  const finalIndicators = uniqueIndicators.slice(0, 8); // Limit to top 8 for display purposes
     
   // Get badge color based on risk percentage - matches the risk thresholds exactly
   const getBadgeColorClass = () => {
@@ -188,8 +229,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             <span className="mr-2">🔎</span>
             Detected Indicators
           </h3>
-          
-          {detectedIndicators.length === 0 ? (
+            {finalIndicators.length === 0 ? (
             <div className="bg-white/60 dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
               <p className="text-sm italic text-gray-600 dark:text-gray-400">
                 {finalRiskPercentage < 25 
@@ -200,7 +240,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           ) : (
             <div className="bg-gray-900/80 rounded-xl p-4">
               <div className="flex flex-wrap gap-2">
-                {detectedIndicators.map((indicator, index) => (
+                {finalIndicators.map((indicator, index) => (
                   <span 
                     key={index}
                     className={`py-2 px-4 rounded-lg text-sm font-medium ${getBadgeColorClass()} border shadow-md inline-block`}
@@ -271,6 +311,126 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{analysisResult.advice}</p>
         </div>
       </div>
+      
+      {/* Limited Context Warning - Display only when limited_context is present */}
+      {analysisResult.limited_context && (
+        <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-700 shadow-lg">
+          <h3 className="text-xl font-bold mb-3 text-yellow-800 dark:text-yellow-300 flex items-center">
+            <span className="mr-2">⚠️</span>
+            Limited Context Warning
+          </h3>
+          <div className="space-y-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              {analysisResult.limited_context.details}
+            </p>
+            
+            <div className="bg-white dark:bg-yellow-950/50 rounded-lg p-4 border border-yellow-200 dark:border-yellow-600">
+              <h4 className="font-medium mb-2 text-yellow-700 dark:text-yellow-300">Recommendations:</h4>
+              <ul className="list-disc pl-5 space-y-1">                {analysisResult.limited_context.recommendations.map((recommendation: string, i: number) => (
+                  <li key={i} className="text-sm text-yellow-800 dark:text-yellow-200">{recommendation}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* URL Analysis Section - Display when URL analysis is available */}
+      {analysisResult.url_analysis && (analysisResult.url_analysis.verified_urls.length > 0 || analysisResult.url_analysis.suspicious_urls.length > 0) && (
+        <div className="p-6 rounded-xl bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 shadow-lg">
+          <h3 className="text-xl font-bold mb-3 text-blue-800 dark:text-blue-300 flex items-center">
+            <span className="mr-2">🔗</span>
+            URL Analysis
+          </h3>
+          
+          {/* Verified URLs Section */}
+          {analysisResult.url_analysis.verified_urls.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-medium mb-2 text-green-700 dark:text-green-400 flex items-center">
+                <span className="mr-1">✅</span> Verified URLs
+              </h4>
+              <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-green-200 dark:border-green-600">
+                <div className="space-y-3">
+                  {analysisResult.url_analysis.verified_urls.map((item, i) => (                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="flex items-center mb-2 sm:mb-0">
+                        <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3">
+                          {i+1}
+                        </span>
+                        <div>
+                          <p className="font-medium text-sm text-green-800 dark:text-green-300">{item.url}</p>
+                          <p className="text-xs text-green-700 dark:text-green-400">{item.organization}</p>
+                          
+                          {/* URL Verifier integration */}
+                          <div className="mt-1">
+                            <a 
+                              href={item.url.startsWith('http') ? item.url : `https://${item.url}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full mr-2 inline-block"
+                            >
+                              Visit Website
+                            </a>
+                            
+                            <span className="text-xs bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded-full inline-block">
+                              {item.verification}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Suspicious URLs Section */}
+          {analysisResult.url_analysis.suspicious_urls.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-2 text-red-700 dark:text-red-400 flex items-center">
+                <span className="mr-1">⚠️</span> Suspicious URLs
+              </h4>
+              <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-red-200 dark:border-red-600">
+                <div className="space-y-3">
+                  {analysisResult.url_analysis.suspicious_urls.map((item, i) => (                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <div className="flex items-center mb-2 sm:mb-0">
+                        <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3">
+                          {i+1}
+                        </span>
+                        <div>
+                          <p className="font-medium text-sm text-red-800 dark:text-red-300">{item.url}</p>
+                          <p className="text-xs text-red-700 dark:text-red-400 mt-1">{item.reason}</p>
+                          
+                          {/* Import UrlVerifier for suspicious URLs */}
+                          <div className="mt-2">
+                            <a 
+                              className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded-full inline-block cursor-not-allowed opacity-70"
+                              title="Not recommended to visit"
+                            >
+                              ⚠️ Do Not Visit
+                            </a>
+                            
+                            <button
+                              className="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-full transition-colors"
+                              onClick={() => {
+                                // Show detailed analysis in a popup/modal
+                                alert(`WARNING: The URL "${item.url}" appears to be suspicious. It matches patterns commonly used in phishing attempts. Do not visit this website.`);
+                              }}
+                            >
+                              View Analysis
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-red-700 dark:text-red-400 italic">Do not click on these URLs as they may be attempts at phishing or fraud.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* How to Avoid Scams */}
       <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>

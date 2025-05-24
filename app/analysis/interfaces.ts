@@ -27,6 +27,23 @@ export interface ReportAgency {
   link: string;
 }
 
+export interface UrlInfo {
+  url: string;
+  organization?: string;
+  verification?: string;
+  reason?: string;
+}
+
+export interface UrlAnalysis {
+  verified_urls: UrlInfo[];
+  suspicious_urls: UrlInfo[];
+}
+
+export interface LimitedContext {
+  details: string;
+  recommendations: string[];
+}
+
 export interface ScamDetectionResult {
   status: string; // "Normal Conversation", "Low Risk Detected", "Moderate Risk Detected", "High Risk Detected", "Very High Risk Detected", "Requires More Context"
   assessment: string; // "Regular Message", "Likely Not a Scam", "Possibly Suspicious", "Likely a Scam", "Highly Likely a Scam", "Requires More Context"
@@ -44,4 +61,7 @@ export interface ScamDetectionResult {
   image_analysis?: string; // Optional analysis of image content if provided
   audio_analysis?: string; // Optional analysis of audio content if provided
   raw_gemini_response?: string; // Optional for debugging
+  keywords?: string[]; // Optional keywords for additional context
+  limited_context?: LimitedContext; // Optional context limitations
+  url_analysis?: UrlAnalysis; // Optional URL analysis results
 }
