@@ -1,6 +1,6 @@
 "use client";
 
-import { ScamDetectionResult } from './interfaces';
+import { ScamDetectionResult, ApiReportAgency } from './interfaces'; // Updated import
 import { extractPercentage, extractScamIndicators, getColorByPercentage } from './utils';
 import { getInitializedIndicators, detectIndicators, calculateRiskPercentage } from './indicators';
 
@@ -11,17 +11,17 @@ interface ResultsDisplayProps {
 
 // Separate component for results display to improve code organization
 export default function ResultsDisplay({ analysisResult, scamContent }: ResultsDisplayProps) {
-  // Extract percentage from the API result
-  const apiPercent = extractPercentage(analysisResult.scam_probability);
+  // Use direct probability from API (0-100)
+  const apiPercent = analysisResult.probability;
   
   // Initialize indicators for detection
   const indicators = getInitializedIndicators();
     // Combine all text for analysis
   const content = (
-    (analysisResult.explanation_english || "") + " " + 
+    (analysisResult.explanation || "") + " " + // Changed from explanation_english
     (scamContent || "") + " " + 
     (analysisResult.image_analysis || "") + " " +
-    (analysisResult.audio_analysis || "")
+    (analysisResult.audioAnalysis || "") // Changed from audio_analysis
   );
   
   // Run the detection algorithm
@@ -42,7 +42,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   // Get UI styles based on calculated risk percentage to ensure consistency
   const statusStyles = getColorByPercentage(finalRiskPercentage);
     // Extract any additional indicators from the AI explanation
-  const extractedIndicators = extractScamIndicators(analysisResult.explanation_english);
+  const extractedIndicators = extractScamIndicators(analysisResult.explanation); // Changed from explanation_english
   
   // Get all detected indicators from the standard pattern matching
   const detectedIndicators = Object.entries(indicators)
@@ -52,44 +52,31 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     .sort((a, b) => {
       return (indicators[b].severity || 0) - (indicators[a].severity || 0);
     });
-  
-  // Add enhanced keywords from the API analysis if available
-  if (analysisResult.keywords && analysisResult.keywords.length > 0) {    // Process special keywords for display
-    const displayKeywordMap: {[key: string]: string} = {
-      'suspicious-url': 'Suspicious URL Detected',
-      'malicious-link': 'Potentially Malicious Link',
-      'isolated-link': 'Isolated Link (Limited Context)',
-      'limited-context': 'Limited Context Analysis',
-      'isolated-legitimate-link': 'Legitimate Website Link',
-      'isolated-suspicious-link': 'Suspicious Isolated Link',
-      'legitimate-financial-website': 'Legitimate Financial Website'
-    };
-    
-    // Process API keywords and add them to detectedIndicators
-    analysisResult.keywords.forEach((keyword: string) => {
-      // Check if we have a display mapping for this keyword
-      if (displayKeywordMap[keyword]) {
-        detectedIndicators.push(displayKeywordMap[keyword]);
-      }
-      // For verified site keywords (e.g., 'verified-landbank')
-      else if (keyword.startsWith('verified-')) {
-        const siteName = keyword.substring(9); // Remove 'verified-' prefix
-        detectedIndicators.push(`Verified ${siteName.charAt(0).toUpperCase() + siteName.slice(1)} Site`);
-      }
-      // Otherwise use the keyword with capitalization
-      else {
-        const formattedKeyword = keyword
-          .split('-')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        // Only add if not already present
-        if (!detectedIndicators.includes(formattedKeyword)) {
-          detectedIndicators.push(formattedKeyword);
-        }
-      }
-    });
-  }
+
+  // The 'keywords' field is no longer in ScamDetectionResult from the API.
+  // If keyword extraction is still needed, it would have to be done client-side
+  // or the API would need to be updated to provide them.
+  // For now, this section is effectively disabled as analysisResult.keywords will be undefined.
+
+  // if (analysisResult.keywords && analysisResult.keywords.length > 0) { 
+  //   const displayKeywordMap: {[key: string]: string} = {
+  //     'limited-context': 'Limited Context Analysis'
+  //   };
+  //   analysisResult.keywords.forEach((keyword: string) => {
+  //     if (displayKeywordMap[keyword]) {
+  //       detectedIndicators.push(displayKeywordMap[keyword]);
+  //     }
+  //     else {
+  //       const formattedKeyword = keyword
+  //         .split('-')
+  //         .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+  //         .join(' ');
+  //       if (!detectedIndicators.includes(formattedKeyword)) {
+  //         detectedIndicators.push(formattedKeyword);
+  //       }
+  //     }
+  //   });
+  // }
   
   // If no indicators were detected but we have AI-extracted ones
   if (detectedIndicators.length === 0 && extractedIndicators.length > 0) {
@@ -118,7 +105,8 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (finalRiskPercentage >= 25) return 'bg-yellow-700 border-yellow-600 text-white';
     return 'bg-green-700 border-green-600 text-white';
   };
-    // Generate a consistent status based on the calculated risk percentage
+
+  // Generate a consistent status based on the calculated risk percentage
   const getConsistentRiskStatus = (percentage: number): string => {
     // Using strict thresholds to ensure UI consistency
     if (percentage >= 75) return "Very High Risk Detected";
@@ -126,9 +114,24 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (percentage >= 25) return "Moderate Risk Detected";
     return "Low Risk Detected";
   };
+
+  // Use API's riskLevel to determine the displayed status, or derive if not present
+  const displayStatus = analysisResult.riskLevel ? 
+    `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Detected` :
+    getConsistentRiskStatus(finalRiskPercentage); // Fallback to calculated
   
-  // Use our calculated risk percentage to determine the displayed status
-  const displayStatus = getConsistentRiskStatus(finalRiskPercentage);
+  // Determine assessment text based on isScam and probability
+  const getAssessmentText = (): string => {
+    if (analysisResult.isScam === undefined) return "Assessment not available";
+    if (analysisResult.isScam) {
+      if (finalRiskPercentage >= 75) return "Highly Likely a Scam";
+      if (finalRiskPercentage >= 50) return "Likely a Scam";
+      return "Possibly Suspicious";
+    }
+    return "Likely Not a Scam";
+  };
+
+  const assessmentText = getAssessmentText();
   
   return (
     <div className="space-y-6">
@@ -195,9 +198,10 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <p className="text-sm"><strong className={statusStyles.textClasses}>Assessment:</strong> {analysisResult.assessment}</p>
-            <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.ai_confidence}</p>
-          </div>            <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>
+            <p className="text-sm"><strong className={statusStyles.textClasses}>Assessment:</strong> {assessmentText}</p>
+            <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.confidence || "Unknown"}</p>
+          </div>
+          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>
             <p className="font-bold text-lg">
               {finalRiskPercentage >= 75 
                 ? '🚨 Very High Risk' 
@@ -258,22 +262,20 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           <h3 className="text-xl font-bold mb-3 text-blue-800 dark:text-blue-200 flex items-center">
             <span className="mr-2">🖼️</span>
             Image Analysis Results
-          </h3>
-          <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-blue-200 dark:border-blue-600">
-            <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap leading-relaxed">{analysisResult.image_analysis}</p>
+          </h3>          <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-blue-200 dark:border-blue-600">
+            <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap leading-relaxed">{analysisResult.image_analysis || "No image analysis available."}</p>
           </div>
         </div>
       )}
       
       {/* Audio Analysis Section */}
-      {analysisResult.audio_analysis && (
+      {analysisResult.audioAnalysis && ( // Changed from audio_analysis
         <div className="p-6 rounded-xl bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-700 shadow-lg">
           <h3 className="text-xl font-bold mb-3 text-purple-800 dark:text-purple-200 flex items-center">
             <span className="mr-2">🎤</span>
             Voice Recording Analysis
-          </h3>
-          <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
-            <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audio_analysis}</p>
+          </h3>          <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
+            <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audioAnalysis || "No audio analysis available."}</p>
           </div>
         </div>
       )}
@@ -286,7 +288,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             Explanation (English)
           </h3>
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanation_english}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanation || "No English explanation available."}</p> {/* Changed from explanation_english */}
           </div>
         </div>
         
@@ -296,7 +298,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             Paliwanag (Tagalog)
           </h3>
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanation_tagalog}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanationTagalog || "Hindi available ang paliwanag sa Tagalog."}</p> {/* Changed from explanation_tagalog */}
           </div>
         </div>
       </div>
@@ -308,131 +310,13 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           Recommended Actions
         </h3>
         <div className="bg-white dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{analysisResult.advice}</p>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{analysisResult.advice || "No specific advice available."}</p>
         </div>
       </div>
-      
-      {/* Limited Context Warning - Display only when limited_context is present */}
-      {analysisResult.limited_context && (
-        <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-3 text-yellow-800 dark:text-yellow-300 flex items-center">
-            <span className="mr-2">⚠️</span>
-            Limited Context Warning
-          </h3>
-          <div className="space-y-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              {analysisResult.limited_context.details}
-            </p>
-            
-            <div className="bg-white dark:bg-yellow-950/50 rounded-lg p-4 border border-yellow-200 dark:border-yellow-600">
-              <h4 className="font-medium mb-2 text-yellow-700 dark:text-yellow-300">Recommendations:</h4>
-              <ul className="list-disc pl-5 space-y-1">                {analysisResult.limited_context.recommendations.map((recommendation: string, i: number) => (
-                  <li key={i} className="text-sm text-yellow-800 dark:text-yellow-200">{recommendation}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* URL Analysis Section - Display when URL analysis is available */}
-      {analysisResult.url_analysis && (analysisResult.url_analysis.verified_urls.length > 0 || analysisResult.url_analysis.suspicious_urls.length > 0) && (
-        <div className="p-6 rounded-xl bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-3 text-blue-800 dark:text-blue-300 flex items-center">
-            <span className="mr-2">🔗</span>
-            URL Analysis
-          </h3>
-          
-          {/* Verified URLs Section */}
-          {analysisResult.url_analysis.verified_urls.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium mb-2 text-green-700 dark:text-green-400 flex items-center">
-                <span className="mr-1">✅</span> Verified URLs
-              </h4>
-              <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-green-200 dark:border-green-600">
-                <div className="space-y-3">
-                  {analysisResult.url_analysis.verified_urls.map((item, i) => (                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center mb-2 sm:mb-0">
-                        <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3">
-                          {i+1}
-                        </span>
-                        <div>
-                          <p className="font-medium text-sm text-green-800 dark:text-green-300">{item.url}</p>
-                          <p className="text-xs text-green-700 dark:text-green-400">{item.organization}</p>
-                          
-                          {/* URL Verifier integration */}
-                          <div className="mt-1">
-                            <a 
-                              href={item.url.startsWith('http') ? item.url : `https://${item.url}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full mr-2 inline-block"
-                            >
-                              Visit Website
-                            </a>
-                            
-                            <span className="text-xs bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded-full inline-block">
-                              {item.verification}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Suspicious URLs Section */}
-          {analysisResult.url_analysis.suspicious_urls.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2 text-red-700 dark:text-red-400 flex items-center">
-                <span className="mr-1">⚠️</span> Suspicious URLs
-              </h4>
-              <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 border border-red-200 dark:border-red-600">
-                <div className="space-y-3">
-                  {analysisResult.url_analysis.suspicious_urls.map((item, i) => (                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <div className="flex items-center mb-2 sm:mb-0">
-                        <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3">
-                          {i+1}
-                        </span>
-                        <div>
-                          <p className="font-medium text-sm text-red-800 dark:text-red-300">{item.url}</p>
-                          <p className="text-xs text-red-700 dark:text-red-400 mt-1">{item.reason}</p>
-                          
-                          {/* Import UrlVerifier for suspicious URLs */}
-                          <div className="mt-2">
-                            <a 
-                              className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded-full inline-block cursor-not-allowed opacity-70"
-                              title="Not recommended to visit"
-                            >
-                              ⚠️ Do Not Visit
-                            </a>
-                            
-                            <button
-                              className="ml-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-full transition-colors"
-                              onClick={() => {
-                                // Show detailed analysis in a popup/modal
-                                alert(`WARNING: The URL "${item.url}" appears to be suspicious. It matches patterns commonly used in phishing attempts. Do not visit this website.`);
-                              }}
-                            >
-                              View Analysis
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs text-red-700 dark:text-red-400 italic">Do not click on these URLs as they may be attempts at phishing or fraud.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Limited Context Warning - This section is removed as limited_context is no longer part of ScamDetectionResult */}
 
-      {/* How to Avoid Scams */}
+      {/* How to Avoid Scams (Tutorials and Tips) */}
       <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>
         <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
           <span className="mr-2">🛡️</span>
@@ -440,102 +324,121 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
         </h3>
         <div className="bg-white dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
           <ul className="space-y-3">
-            {analysisResult.how_to_avoid_scams.map((tip, index) => (
-              <li key={index} className="flex items-start text-sm">
+            {analysisResult.tutorialsAndTips?.length ? // Changed from how_to_avoid_scams
+              analysisResult.tutorialsAndTips.map((tip, index) => (
+                <li key={index} className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                    {index + 1}
+                  </span>
+                  <span className="leading-relaxed">{tip}</span>
+                </li>
+              )) : 
+              <li className="flex items-start text-sm">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
-                  {index + 1}
+                  1
                 </span>
-                <span className="leading-relaxed">{tip}</span>
+                <span className="leading-relaxed">Verify the identity of anyone contacting you online or by phone before sharing any personal information.</span>
               </li>
-            ))}
+            }
           </ul>
         </div>
       </div>
 
-      {/* Reporting Section */}
+      {/* Reporting Section (Complaint Filing Info) */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
         <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
           <span className="mr-2">📢</span>
           Where to Report This Scam
         </h3>
         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+          {analysisResult.complaintFilingInfo?.introduction && (
+            <p className="text-sm mb-3 italic text-gray-600 dark:text-gray-400">
+              {analysisResult.complaintFilingInfo.introduction}
+            </p>
+          )}
           <ul className="space-y-3">
-            {analysisResult.where_to_report.map((agency, index) => (
-              <li key={index} className="flex items-center">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                <a 
-                  href={agency.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
-                >
-                  {agency.name}
-                </a>
-              </li>
-            ))}
+            {analysisResult.complaintFilingInfo?.agencies?.length ? 
+              analysisResult.complaintFilingInfo.agencies.map((agency: ApiReportAgency, index: number) => (
+                <li key={index} className="flex items-start">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3 mt-1.5 flex-shrink-0"></span>
+                  <div>
+                    <a 
+                      href={agency.url} // Changed from link to url
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
+                    >
+                      {agency.name}
+                    </a>
+                    {agency.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{agency.description}</p>
+                    )}
+                  </div>
+                </li>
+              )) :
+              <>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  <a 
+                    href="https://www.consumer.ftc.gov/features/scam-alerts" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
+                  >
+                    Federal Trade Commission (FTC)
+                  </a>
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  <a 
+                    href="https://www.ic3.gov" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
+                  >
+                    Internet Crime Complaint Center (IC3)
+                  </a>
+                </li>
+              </>
+            }
           </ul>
         </div>
       </div>
 
-      {/* What to Do If Scammed */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 border border-red-200 dark:border-red-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-4 text-red-800 dark:text-red-200 flex items-center">
-            <span className="mr-2">🚨</span>
-            If You've Been Scammed (English)
-          </h3>
-          <div className="space-y-3">
-            {analysisResult.what_to_do_if_scammed.map((step, index) => (
-              <div key={index} className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
-                  {index + 1}
-                </span>
-                <span className="text-sm text-red-800 dark:text-red-200 leading-relaxed">{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 border border-red-200 dark:border-red-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-4 text-red-800 dark:text-red-200 flex items-center">
-            <span className="mr-2">🚨</span>
-            Kung Na-scam Ka (Tagalog)
-          </h3>
-          <div className="space-y-3">
-            {analysisResult.what_to_do_if_scammed_tagalog.map((step, index) => (
-              <div key={index} className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
-                  {index + 1}
-                </span>
-                <span className="text-sm text-red-800 dark:text-red-200 leading-relaxed">{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
       {/* True vs False Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
-            <span className="mr-2">🔍</span>
-            True vs False Information (English)
-          </h3>
-          <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
-            <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">{analysisResult.true_vs_false}</p>
-          </div>
+      {(analysisResult.true_vs_false || analysisResult.true_vs_false_tagalog) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {analysisResult.true_vs_false && (
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
+              <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
+                <span className="mr-2">🔍</span>
+                True vs False Information (English)
+              </h3>
+              <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
+                <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
+                  {analysisResult.true_vs_false || "No information available on distinguishing true vs false information."}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {analysisResult.true_vs_false_tagalog && (
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
+              <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
+                <span className="mr-2">🔍</span>
+                Tunay vs Hindi Tunay (Tagalog)
+              </h3>
+              <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
+                <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
+                  {analysisResult.true_vs_false_tagalog || "Walang available na impormasyon tungkol sa pagkilala ng totoo sa hindi totoong impormasyon."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-        
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
-          <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
-            <span className="mr-2">🔍</span>
-            Tunay vs Hindi Tunay (Tagalog)
-          </h3>
-          <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
-            <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">{analysisResult.true_vs_false_tagalog}</p>
-          </div>
-        </div>
-      </div>
+      )}
+
+      {/* What to Do If Scammed - This section is removed as these fields are no longer part of ScamDetectionResult */}
     </div>
   );
 }
