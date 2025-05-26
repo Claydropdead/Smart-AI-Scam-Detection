@@ -32,7 +32,7 @@ export default function ConsentManager() {
     try {
       const date = new Date(dateString);
       return date.toLocaleString();
-    } catch (_) {
+    } catch {
       return 'Invalid date';
     }
   };

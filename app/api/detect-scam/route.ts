@@ -18,6 +18,7 @@ interface ContextInfo {
   recommendations: string[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ScamDetectionResponse {
   status: string; // e.g., "Low Risk Detected"
   assessment: string; // e.g., "Likely Not a Scam"
@@ -59,6 +60,7 @@ interface GeminiApiResponse {
 }
 
 // Map risk level to status
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mapRiskLevelToStatus(riskLevel: string): string {
   switch (riskLevel?.toLowerCase()) {
     case 'very high':
@@ -75,6 +77,7 @@ function mapRiskLevelToStatus(riskLevel: string): string {
 }
 
 // Extract keywords from text
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function extractKeywords(text: string): string[] {
   if (!text) return [];
   

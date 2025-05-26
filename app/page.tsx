@@ -158,7 +158,7 @@ export default function LandingPage() {
       clearInterval(threatInterval);
       clearInterval(testimonialInterval);
     };
-  }, []);
+  }, [features.length, threats.length, testimonials.length]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);

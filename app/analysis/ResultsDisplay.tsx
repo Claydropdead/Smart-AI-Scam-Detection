@@ -1,7 +1,7 @@
 "use client";
 
 import { ScamDetectionResult, ApiReportAgency } from './interfaces'; // Updated import
-import { extractPercentage, extractScamIndicators, getColorByPercentage } from './utils';
+import { extractScamIndicators, getColorByPercentage } from './utils';
 import { getInitializedIndicators, detectIndicators, calculateRiskPercentage } from './indicators';
 
 interface ResultsDisplayProps {

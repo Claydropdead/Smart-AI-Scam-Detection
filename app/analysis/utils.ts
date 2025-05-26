@@ -1,7 +1,5 @@
 "use client";
 
-import { IndicatorData, IndicatorMatch, CommonIndicators } from './interfaces';
-
 /**
  * Extract potential scam indicators from explanation text
  * @param explanationText - The text to analyze for indicators

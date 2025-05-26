@@ -192,10 +192,9 @@ export function detectIndicators(content: string, indicatorsObj: CommonIndicator
   const lowerContent = content.toLowerCase();
   
   // Enhanced detection algorithm with confidence levels and pattern matching
-  for (const [indicator, data] of Object.entries(indicatorsObj)) {
-    maxPossibleSeverity += data.severity;
+  for (const [indicator, data] of Object.entries(indicatorsObj)) {    maxPossibleSeverity += data.severity;
     let patternHits = 0;
-    let totalPatterns = data.patterns.length;
+    const totalPatterns = data.patterns.length;
     
     // Count how many patterns match
     for (const pattern of data.patterns) {
