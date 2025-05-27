@@ -7,8 +7,9 @@ export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState('hero');
   const [isScrolled, setIsScrolled] = useState(false);
-  const [threatIndex, setThreatIndex] = useState(0);
-  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  // These state variables are used in auto-rotation intervals and referenced in JSX
+  const [threatIndex, setThreatIndex] = useState(0); // Used in auto-rotation
+  const [testimonialIndex, setTestimonialIndex] = useState(0); // Used in auto-rotation
   const [displayText, setDisplayText] = useState("");
   const fullText = "Protect Yourself from Digital Threats";
   
@@ -63,13 +64,12 @@ export default function LandingPage() {
       rating: 5,
       avatar: "👵"
     }
-  ];
-  useEffect(() => {
+  ];  useEffect(() => {
     // Text typing animation
     let currentIndex = 0;
     let isDeleting = false;
-    let typingSpeed = 100; // milliseconds
-    let pauseTime = 2000;  // 2 seconds
+    const typingSpeed = 100; // milliseconds
+    const pauseTime = 2000;  // 2 seconds
     
     const typeWriter = () => {
       if (!isDeleting && currentIndex < fullText.length) {
