@@ -11,9 +11,13 @@ export const saveUserConsent = (consentType: string) => {
       timestamp: new Date().toISOString(),
       value: true
     };
+      // Save back to localStorage
+    localStorage.setItem('threatShieldConsents', JSON.stringify(existingConsents));
     
-    // Save back to localStorage
-    localStorage.setItem('scamDetectConsents', JSON.stringify(existingConsents));
+    // Also save as simple flag for maximum compatibility
+    if (consentType === 'termsAndConditions') {
+      localStorage.setItem('threatShieldTermsAccepted', 'true');
+    }
     
     return true;
   } catch (error) {
@@ -25,7 +29,11 @@ export const saveUserConsent = (consentType: string) => {
 // Get all user consents from localStorage
 export const getUserConsents = () => {
   try {
-    const consentsStr = localStorage.getItem('scamDetectConsents');
+    // Try the new key first, then fall back to the old key for backward compatibility
+    let consentsStr = localStorage.getItem('threatShieldConsents');
+    if (!consentsStr) {
+      consentsStr = localStorage.getItem('scamDetectConsents');
+    }
     return consentsStr ? JSON.parse(consentsStr) : {};
   } catch (error) {
     console.error('Error retrieving user consents:', error);
@@ -36,6 +44,15 @@ export const getUserConsents = () => {
 // Check if a specific consent has been given
 export const hasUserConsent = (consentType: string) => {
   try {
+    // First check the legacy simple flags (more reliable)
+    if (consentType === 'termsAndConditions') {
+      if (localStorage.getItem('threatShieldTermsAccepted') === 'true' || 
+          localStorage.getItem('scamDetectTermsAccepted') === 'true') {
+        return true;
+      }
+    }
+    
+    // Then check the modern format
     const consents = getUserConsents();
     return !!(consents[consentType]?.value);
   } catch (error) {
@@ -48,9 +65,9 @@ export const hasUserConsent = (consentType: string) => {
 export const clearUserConsent = (consentType: string) => {
   try {
     const existingConsents = getUserConsents();
-    if (existingConsents[consentType]) {
+  if (existingConsents[consentType]) {
       delete existingConsents[consentType];
-      localStorage.setItem('scamDetectConsents', JSON.stringify(existingConsents));
+      localStorage.setItem('threatShieldConsents', JSON.stringify(existingConsents));
     }
     return true;
   } catch (error) {
@@ -62,8 +79,11 @@ export const clearUserConsent = (consentType: string) => {
 // Clear all consents
 export const clearAllConsents = () => {
   try {
-    localStorage.removeItem('scamDetectConsents');
-    localStorage.removeItem('scamDetectTermsAccepted'); // Also clear the legacy format
+    // Clear all possible consent storage locations
+    localStorage.removeItem('threatShieldConsents');
+    localStorage.removeItem('scamDetectConsents'); // Clear old format
+    localStorage.removeItem('threatShieldTermsAccepted'); // Clear simple flag
+    localStorage.removeItem('scamDetectTermsAccepted'); // Clear legacy format
     return true;
   } catch (error) {
     console.error('Error clearing all user consents:', error);

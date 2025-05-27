@@ -28,14 +28,15 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Check if user has previously accepted terms
+    // Check if user has previously accepted terms
   useEffect(() => {
     // Check if the user has consent using our new system
     const termsAccepted = hasUserConsent('termsAndConditions');
     
-    // Also check the legacy format for backward compatibility
-    const legacyTermsAccepted = localStorage.getItem('scamDetectTermsAccepted') === 'true';
+    // Also check the legacy formats for backward compatibility
+    const legacyTermsAccepted = 
+      localStorage.getItem('threatShieldTermsAccepted') === 'true' ||
+      localStorage.getItem('scamDetectTermsAccepted') === 'true';
     
     if (termsAccepted || legacyTermsAccepted) {
       setHasAcceptedTerms(true);
@@ -48,7 +49,7 @@ export default function Home() {
   const handleAcceptTerms = () => {
     // The saveUserConsent is now called inside the TermsAndConditionsModal component
     // But we'll keep the legacy format for backward compatibility
-    localStorage.setItem('scamDetectTermsAccepted', 'true');
+    localStorage.setItem('threatShieldTermsAccepted', 'true');
     setHasAcceptedTerms(true);
     setShowTermsModal(false);
   };
@@ -671,10 +672,9 @@ export default function Home() {
             <div className="flex justify-center items-center space-x-4 mb-6">
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                 <span className="text-2xl">🛡️</span>
-              </div>
-              <div>
+              </div>              <div>
                 <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  ScamDetect AI
+                  ThreatShield AI
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Protecting you from digital scams</p>
               </div>

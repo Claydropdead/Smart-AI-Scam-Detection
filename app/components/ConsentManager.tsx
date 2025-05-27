@@ -35,22 +35,20 @@ export default function ConsentManager() {
     } catch {
       return 'Invalid date';
     }
-  };
-
-  // Handle clearing all consents
+  };  // Handle clearing all consents
   const handleClearConsents = () => {
     if (confirm('Are you sure you want to clear all consent data? You will need to accept the terms again to use the service.')) {
       clearAllConsents();
       setConsents({});
       window.location.reload(); // Reload to show terms again
     }
-  };
-
-  // Legacy format support
+  };// Legacy format support
   useEffect(() => {
-    const legacyConsent = localStorage.getItem('scamDetectTermsAccepted');
+    const legacyTermsAccepted = 
+      localStorage.getItem('threatShieldTermsAccepted') === 'true' || 
+      localStorage.getItem('scamDetectTermsAccepted') === 'true';
     
-    if (legacyConsent === 'true' && !consents?.termsAndConditions) {
+    if (legacyTermsAccepted && !consents?.termsAndConditions) {
       // We have a legacy consent but no new format - update display only
       setConsents(prev => ({
         ...prev,
@@ -95,9 +93,7 @@ export default function ConsentManager() {
                     </span>
                   </li>
                 ))}
-              </ul>
-              
-              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+              </ul>                <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleClearConsents}
                   className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
@@ -105,11 +101,12 @@ export default function ConsentManager() {
                   Revoke All Consents
                 </button>
               </div>
+            </div>          ) : (
+            <div>
+              <p className="text-yellow-600 dark:text-yellow-400">
+                No consents have been given. You need to accept the terms to use the analysis features.
+              </p>
             </div>
-          ) : (
-            <p className="text-yellow-600 dark:text-yellow-400">
-              No consents have been given. You need to accept the terms to use the analysis features.
-            </p>
           )}
         </div>
       )}
