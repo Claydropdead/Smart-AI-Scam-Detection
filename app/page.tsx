@@ -1,7 +1,7 @@
 // Modern refactored landing page for ThreatShield AI with enhanced interactivity
 "use client";
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,6 +9,8 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [threatIndex, setThreatIndex] = useState(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const fullText = "Protect Yourself from Digital Threats";
   
   const sectionsRef = useRef<{ [key: string]: HTMLElement | null }>({});
 
@@ -62,8 +64,37 @@ export default function LandingPage() {
       avatar: "👵"
     }
   ];
-
   useEffect(() => {
+    // Text typing animation
+    let currentIndex = 0;
+    let isDeleting = false;
+    let typingSpeed = 100; // milliseconds
+    let pauseTime = 2000;  // 2 seconds
+    
+    const typeWriter = () => {
+      if (!isDeleting && currentIndex < fullText.length) {
+        // Typing forward
+        setDisplayText(fullText.substring(0, currentIndex + 1));
+        currentIndex++;
+        setTimeout(typeWriter, typingSpeed);
+      } else if (!isDeleting && currentIndex === fullText.length) {
+        // Pause at the end
+        isDeleting = true;
+        setTimeout(typeWriter, pauseTime);
+      } else if (isDeleting && currentIndex > 0) {
+        // Deleting
+        setDisplayText(fullText.substring(0, currentIndex - 1));
+        currentIndex--;
+        setTimeout(typeWriter, typingSpeed / 2); // Delete faster than typing
+      } else {
+        // Pause before starting again
+        isDeleting = false;
+        setTimeout(typeWriter, pauseTime / 2);
+      }
+    };
+    
+    typeWriter();
+    
     // Scroll detection
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -97,7 +128,7 @@ export default function LandingPage() {
       clearInterval(threatInterval);
       clearInterval(testimonialInterval);
     };
-  }, [threats.length, testimonials.length]);
+  }, [fullText, threats.length, testimonials.length]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -221,13 +252,19 @@ export default function LandingPage() {
         </div>
 
         <div className="relative z-10 container mx-auto px-6 py-20 text-center">
-          <div className="max-w-5xl mx-auto">
-            {/* Main Headline */}
-            <div className="mb-8">              <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
-                <span className="block text-white">Protect Yourself from</span>
-                <span className="block bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-pulse">
-                  Digital Threats
-                </span>
+          <div className="max-w-5xl mx-auto">            {/* Main Headline */}            <div className="mb-8">              <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+                <div className="relative flex justify-center">
+                  <div className="border-r-4 border-white animate-blink">
+                    {displayText.includes("Digital Threats") ? (
+                      <>
+                        <span className="text-white">Protect Yourself from </span>
+                        <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">Digital Threats</span>
+                      </>
+                    ) : (
+                      <span className="text-white">{displayText}</span>
+                    )}
+                  </div>
+                </div>
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
                 Advanced AI technology that analyzes messages, emails, and images to detect trending threats and cyber attacks before you become a victim. 
