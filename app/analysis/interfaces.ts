@@ -45,6 +45,16 @@ export interface ScamDetectionResult {
   tutorialsAndTips: string[]; // Was how_to_avoid_scams
   complaintFilingInfo: ApiComplaintFilingInfo; // New structure, replaces where_to_report
 
+  // Enhanced contextual fields
+  status?: string; // Contextual display status that includes content type
+  assessment?: string; // Assessment text that's contextually relevant to query
+  contentType?: string; // Type of content analyzed (text, website, image, audio)
+  riskSummary?: string; // Brief summary of risk findings
+  indicators?: string[]; // Key risk indicators extracted from analysis
+  detectedRiskCategories?: string[]; // Categories of risks detected
+  contentPurpose?: string; // The purpose of the content being analyzed
+  audienceTarget?: string; // Who the content is targeting
+  
   // Optional analysis types from API
   audioAnalysis?: string; // Was audio_analysis
   image_analysis?: string; // Kept optional as UI uses it, and API might provide it
@@ -52,8 +62,4 @@ export interface ScamDetectionResult {
   // Added back from previous version as per user request
   true_vs_false?: string;
   true_vs_false_tagalog?: string;
-
-  // Note: Fields like status, assessment, keywords, what_to_do_if_scammed, limited_context
-  // are no longer part of this interface as they are not directly returned by the new API structure.
-  // ResultsDisplay.tsx will need to be updated to handle their absence or derive them if needed.
 }

@@ -688,13 +688,11 @@ export default function Home() {
               <div className="flex items-center space-x-2">
                 <Image
                   src="/next.svg"
-                  alt="Next.js Logo"
-                  width={60}
-                  height={12}
-                  className="dark:invert opacity-75"
+                  alt="Next.js Logo"                  width={60}
+                  height={12}                  className="dark:invert opacity-75"
                 />
                 <span className="text-xs text-gray-500 dark:text-gray-400">•</span>
-                <p className="font-mono text-xs text-gray-500 dark:text-gray-400">Powered by Gemini AI</p>
+                <p className="font-mono text-xs text-gray-500 dark:text-gray-400">Powered by Gemini 2.0 Flash</p>
               </div>
             </div>
             

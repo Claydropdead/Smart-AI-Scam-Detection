@@ -114,14 +114,17 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (percentage >= 25) return "Moderate Risk Detected";
     return "Low Risk Detected";
   };
-
-  // Use API's riskLevel to determine the displayed status, or derive if not present
-  const displayStatus = analysisResult.riskLevel ? 
-    `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Detected` :
-    getConsistentRiskStatus(finalRiskPercentage); // Fallback to calculated
-  
-  // Determine assessment text based on isScam and probability
+  // Use API's status if present, otherwise fallback to derived status
+  const displayStatus = analysisResult.status || 
+    (analysisResult.riskLevel ? 
+      `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Detected` :
+      getConsistentRiskStatus(finalRiskPercentage)); // Fallback to calculated
+    // Determine assessment text based on what the API provides or calculate it
   const getAssessmentText = (): string => {
+    // First use the direct assessment if available from API
+    if (analysisResult.assessment) return analysisResult.assessment;
+    
+    // Otherwise calculate it based on isScam and probability
     if (analysisResult.isScam === undefined) return "Assessment not available";
     if (analysisResult.isScam) {
       if (finalRiskPercentage >= 75) return "Highly Likely a Scam";
@@ -196,10 +199,18 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">          <div className="space-y-3">
+            {analysisResult.contentType && (
+              <p className="text-sm"><strong className={statusStyles.textClasses}>Content Type:</strong> {analysisResult.contentType}</p>
+            )}
             <p className="text-sm"><strong className={statusStyles.textClasses}>Assessment:</strong> {assessmentText}</p>
             <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.confidence || "Unknown"}</p>
+            {analysisResult.contentPurpose && (
+              <p className="text-sm"><strong className={statusStyles.textClasses}>Content Purpose:</strong> {analysisResult.contentPurpose}</p>
+            )}
+            {analysisResult.audienceTarget && (
+              <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget}</p>
+            )}
           </div>
           <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>
             <p className="font-bold text-lg">
@@ -211,15 +222,15 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                     ? '⚠️ Moderate Risk'
                     : '✅ Low Risk'
               } ({Math.round(finalRiskPercentage)}%)
-            </p>
-            <p className="text-sm mt-2 opacity-90">
-              {finalRiskPercentage < 25 
-                ? '✅ Safe content with no suspicious elements detected' 
-                : finalRiskPercentage < 50 
-                  ? '⚠️ Possibly suspicious but not clearly malicious'
-                  : finalRiskPercentage < 75
-                    ? '🚨 Likely a scam with clear risk indicators'
-                    : '🔴 Dangerous content with multiple strong scam indicators'
+            </p>            <p className="text-sm mt-2 opacity-90">
+              {analysisResult.riskSummary || 
+                (finalRiskPercentage < 25 
+                  ? '✅ Safe content with no suspicious elements detected' 
+                  : finalRiskPercentage < 50 
+                    ? '⚠️ Possibly suspicious but not clearly malicious'
+                    : finalRiskPercentage < 75
+                      ? '🚨 Likely a scam with clear risk indicators'
+                      : '🔴 Dangerous content with multiple strong scam indicators')
               }
             </p>
           </div>
@@ -232,29 +243,42 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
             <span className="mr-2">🔎</span>
             Detected Indicators
-          </h3>
-            {finalIndicators.length === 0 ? (
-            <div className="bg-white/60 dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
-              <p className="text-sm italic text-gray-600 dark:text-gray-400">
-                {finalRiskPercentage < 25 
-                  ? 'No significant scam indicators detected in this content.' 
-                  : 'No specific indicators detected. Please refer to the detailed explanation below.'}
-              </p>
-            </div>
-          ) : (
-            <div className="bg-gray-900/80 rounded-xl p-4">
-              <div className="flex flex-wrap gap-2">
-                {finalIndicators.map((indicator, index) => (
-                  <span 
-                    key={index}
-                    className={`py-2 px-4 rounded-lg text-sm font-medium ${getBadgeColorClass()} border shadow-md inline-block`}
-                  >
-                    {indicator}
-                  </span>
-                ))}
+          </h3>            {/* Use API-provided indicators if available, otherwise fallback to detected ones */}
+            {(analysisResult.indicators && analysisResult.indicators.length > 0) ? (
+              <div className="bg-gray-900/80 rounded-xl p-4">
+                <div className="flex flex-wrap gap-2">
+                  {analysisResult.indicators.map((indicator, index) => (
+                    <span 
+                      key={index}
+                      className={`py-2 px-4 rounded-lg text-sm font-medium ${getBadgeColorClass()} border shadow-md inline-block`}
+                    >
+                      {indicator}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ) : finalIndicators.length === 0 ? (
+              <div className="bg-white/60 dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
+                <p className="text-sm italic text-gray-600 dark:text-gray-400">
+                  {finalRiskPercentage < 25 
+                    ? 'No significant risk indicators detected in this content.' 
+                    : 'No specific indicators detected. Please refer to the detailed explanation below.'}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-gray-900/80 rounded-xl p-4">
+                <div className="flex flex-wrap gap-2">
+                  {finalIndicators.map((indicator, index) => (
+                    <span 
+                      key={index}
+                      className={`py-2 px-4 rounded-lg text-sm font-medium ${getBadgeColorClass()} border shadow-md inline-block`}
+                    >
+                      {indicator}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
       )}      {/* Image Analysis Section */}
       {analysisResult.image_analysis && (
