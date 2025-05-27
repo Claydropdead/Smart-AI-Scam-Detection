@@ -6,49 +6,13 @@ import { useState, useEffect, useRef } from 'react';
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState('hero');
-  const [isScrolled, setIsScrolled] = useState(false);  const [stats, setStats] = useState({ 
-    threatsDetected: 0, 
-    usersProtected: 0, 
-    accuracy: 0,
-    analysisTime: 0 
-  });
-  const [activeFeature, setActiveFeature] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [threatIndex, setThreatIndex] = useState(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   
   const sectionsRef = useRef<{ [key: string]: HTMLElement | null }>({});
 
   // Enhanced data structures
-  const features = [
-    {
-      icon: "🛡️",
-      title: "AI-Powered Threat Detection",
-      description: "Advanced machine learning algorithms analyze patterns, language, and context to identify emerging threats and attack vectors.",
-      details: ["Real-time analysis", "Pattern recognition", "Contextual understanding", "Multi-language support"],
-      color: "blue"
-    },
-    {
-      icon: "⚡",
-      title: "Instant Threat Assessment",
-      description: "Get comprehensive risk analysis in seconds with detailed explanations and proactive security recommendations.",
-      details: ["Sub-second analysis", "Threat scoring", "Risk categorization", "Actionable insights"],
-      color: "yellow"
-    },
-    {
-      icon: "🌐",
-      title: "Local & Global Intelligence",
-      description: "Comprehensive knowledge of regional and international threat landscapes with bilingual support and local context.",
-      details: ["Global threat data", "Regional expertise", "Tagalog support", "Cultural awareness"],
-      color: "green"
-    },
-    {
-      icon: "🔒",
-      title: "Privacy First",
-      description: "Your data is processed securely and never stored. Complete privacy protection guaranteed.",
-      details: ["No data storage", "Encrypted processing", "Privacy compliant", "Secure transmission"],
-      color: "purple"
-    }
-  ];
   const threats = [
     {
       type: "Banking Phishing",
@@ -105,7 +69,7 @@ export default function LandingPage() {
       setIsScrolled(window.scrollY > 50);
       
       // Section detection for active navigation
-      const sections = ['hero', 'features', 'how-it-works', 'threats', 'testimonials'];
+      const sections = ['hero', 'how-it-works', 'threats'];
       const current = sections.find(section => {
         const element = sectionsRef.current[section];
         if (element) {
@@ -119,31 +83,7 @@ export default function LandingPage() {
 
     window.addEventListener('scroll', handleScroll);
 
-    // Animate counters
-    const animateCounter = (target: number, setter: (value: number) => void, duration: number = 2000) => {
-      let start = 0;
-      const increment = target / (duration / 16);
-      const timer = setInterval(() => {
-        start += increment;
-        if (start >= target) {
-          setter(target);
-          clearInterval(timer);
-        } else {
-          setter(Math.floor(start));
-        }
-      }, 16);
-    };    setTimeout(() => {
-      animateCounter(25000, (value) => setStats(prev => ({ ...prev, threatsDetected: value })));
-      animateCounter(12000, (value) => setStats(prev => ({ ...prev, usersProtected: value })));
-      animateCounter(98, (value) => setStats(prev => ({ ...prev, accuracy: value })));
-      animateCounter(3, (value) => setStats(prev => ({ ...prev, analysisTime: value })));
-    }, 1000);
-
-    // Auto-rotate features, threats, and testimonials
-    const featureInterval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % features.length);
-    }, 5000);
-
+    // Auto-rotate threats and testimonials
     const threatInterval = setInterval(() => {
       setThreatIndex(prev => (prev + 1) % threats.length);
     }, 6000);
@@ -154,11 +94,10 @@ export default function LandingPage() {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearInterval(featureInterval);
       clearInterval(threatInterval);
       clearInterval(testimonialInterval);
     };
-  }, [features.length, threats.length, testimonials.length]);
+  }, [threats.length, testimonials.length]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -194,12 +133,10 @@ export default function LandingPage() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
-              {[
+              { [
                 { id: 'hero', label: 'Home' },
-                { id: 'features', label: 'Features' },
                 { id: 'how-it-works', label: 'How It Works' },
-                { id: 'threats', label: 'Threats' },
-                { id: 'testimonials', label: 'Reviews' }
+                { id: 'threats', label: 'Threats' }
               ].map(({ id, label }) => (
                 <button
                   key={id}
@@ -247,12 +184,10 @@ export default function LandingPage() {
             isMenuOpen ? 'max-h-80 opacity-100 mt-4' : 'max-h-0 opacity-0'
           } overflow-hidden`}>
             <div className="bg-slate-800/90 backdrop-blur-lg rounded-2xl border border-slate-700/50 p-6 space-y-4">
-              {[
+              { [
                 { id: 'hero', label: 'Home' },
-                { id: 'features', label: 'Features' },
                 { id: 'how-it-works', label: 'How It Works' },
-                { id: 'threats', label: 'Threats' },
-                { id: 'testimonials', label: 'Reviews' }
+                { id: 'threats', label: 'Threats' }
               ].map(({ id, label }) => (
                 <button
                   key={id}
@@ -300,35 +235,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Interactive Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 group">                <div className="text-3xl md:text-4xl font-bold text-cyan-400 mb-2 group-hover:scale-110 transition-transform">
-                  {stats.threatsDetected.toLocaleString()}+
-                </div>
-                <div className="text-sm text-slate-400">Threats Detected</div>
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-green-500/50 transition-all duration-300 group">
-                <div className="text-3xl md:text-4xl font-bold text-green-400 mb-2 group-hover:scale-110 transition-transform">
-                  {stats.usersProtected.toLocaleString()}+
-                </div>
-                <div className="text-sm text-slate-400">Users Protected</div>
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 group">
-                <div className="text-3xl md:text-4xl font-bold text-purple-400 mb-2 group-hover:scale-110 transition-transform">
-                  {stats.accuracy}%
-                </div>
-                <div className="text-sm text-slate-400">Accuracy Rate</div>
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-yellow-500/50 transition-all duration-300 group">
-                <div className="text-3xl md:text-4xl font-bold text-yellow-400 mb-2 group-hover:scale-110 transition-transform">
-                  &lt;{stats.analysisTime}s
-                </div>
-                <div className="text-sm text-slate-400">Analysis Time</div>
-              </div>
-            </div>
-
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+            <div className="flex justify-center mb-12">
               <Link
                 href="/analysis"
                 className="group relative bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-cyan-500/25"
@@ -341,263 +249,12 @@ export default function LandingPage() {
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-300"></div>
               </Link>
-              
-              <button
-                onClick={() => scrollToSection('features')}
-                className="group flex items-center text-slate-300 hover:text-cyan-400 font-semibold text-lg transition-all duration-300"
-              >
-                <span>Learn How It Works</span>
-                <svg className="ml-2 w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Live Threat Demo */}
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-slate-800/30 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-white">Live Threat Detection Demo</h3>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-slate-400">Real-time Analysis</span>
-                  </div>
-                </div>
-                
-                <div className="bg-slate-900/70 rounded-2xl p-6 mb-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                      <span className="text-red-400 text-xl">⚠️</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-slate-400 mb-2">{threats[threatIndex].type}</div>
-                      <div className="text-white font-mono text-sm bg-black/30 p-3 rounded-lg border-l-4 border-red-500">
-                        "{threats[threatIndex].example}"
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-red-400 font-semibold">Risk Level:</span>
-                      <span className="text-red-300">{threats[threatIndex].risk}%</span>
-                    </div>
-                    <div className="w-32 bg-slate-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-1000"
-                        style={{ width: `${threats[threatIndex].risk}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <Link href="/analysis" className="text-cyan-400 hover:text-cyan-300 font-medium">
-                    Analyze Your Message →
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-          <button
-            onClick={() => scrollToSection('features')}
-            className="animate-bounce text-slate-400 hover:text-cyan-400 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </button>
-        </div>      </section>
-
-      {/* Modern Features Section */}
-      <section 
-        id="features" 
-        ref={el => { if (el) sectionsRef.current.features = el; }}
-        className="py-20 bg-slate-900/50 relative overflow-hidden"
-      >
-        {/* Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="text-white">Powerful Features for</span>
-              <span className="block bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Complete Protection
-              </span>
-            </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Advanced AI technology combined with local expertise to protect you from all types of digital threats
-            </p>
-          </div>
-
-          {/* Interactive Features Showcase */}
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-              {/* Feature Details */}
-              <div className="space-y-8">
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
-                  <div className="flex items-center mb-6">
-                    <div className={`text-4xl mr-4 transition-all duration-500 ${
-                      activeFeature === 0 ? 'animate-pulse' : ''
-                    }`}>
-                      {features[activeFeature].icon}
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        {features[activeFeature].title}
-                      </h3>
-                      <div className={`w-12 h-1 rounded-full bg-gradient-to-r transition-all duration-300 ${
-                        features[activeFeature].color === 'blue' ? 'from-blue-400 to-blue-600' :
-                        features[activeFeature].color === 'yellow' ? 'from-yellow-400 to-yellow-600' :
-                        features[activeFeature].color === 'green' ? 'from-green-400 to-green-600' :
-                        'from-purple-400 to-purple-600'
-                      }`}></div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-slate-300 text-lg mb-6">
-                    {features[activeFeature].description}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    {features[activeFeature].details.map((detail, index) => (
-                      <div key={index} className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-3 ${
-                          features[activeFeature].color === 'blue' ? 'bg-blue-400' :
-                          features[activeFeature].color === 'yellow' ? 'bg-yellow-400' :
-                          features[activeFeature].color === 'green' ? 'bg-green-400' :
-                          'bg-purple-400'
-                        }`}></div>
-                        <span className="text-sm text-slate-400">{detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Feature Navigation */}
-                <div className="flex space-x-2">
-                  {features.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setActiveFeature(index)}
-                      className={`flex-1 p-4 rounded-xl transition-all duration-300 ${
-                        activeFeature === index
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50'
-                          : 'bg-slate-800/30 border border-slate-700/50 hover:border-slate-600/50'
-                      }`}
-                    >
-                      <div className="text-2xl mb-2">{features[index].icon}</div>
-                      <div className={`text-sm font-medium ${
-                        activeFeature === index ? 'text-cyan-400' : 'text-slate-400'
-                      }`}>
-                        {features[index].title}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visual Demo Dashboard */}
-              <div className="relative">
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
-                  <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-lg font-semibold text-white">Live Analysis Demo</h4>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-400">Active</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Sample Analysis Result */}
-                    <div className="bg-slate-900/70 rounded-2xl p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-                          <span className="text-red-400 text-xl">⚠️</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-slate-400 mb-2">Sample Message Analysis</div>
-                          <div className="text-white font-mono text-sm bg-black/30 p-3 rounded-lg border-l-4 border-red-500 mb-4">
-                            "URGENT: Your account will be suspended. Verify immediately: suspicious-link.com"
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs text-slate-400 mb-1">Risk Level</div>
-                              <div className="text-red-400 font-bold">Very High (95%)</div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-slate-400 mb-1">Confidence</div>
-                              <div className="text-green-400 font-bold">98%</div>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-4">
-                            <div className="text-xs text-slate-400 mb-2">Detected Indicators</div>
-                            <div className="flex flex-wrap gap-2">
-                              <span className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded-full">Urgent Language</span>
-                              <span className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded-full">Suspicious URL</span>
-                              <span className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded-full">Account Threat</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progress Bars */}
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-400">Threat Detection</span>
-                          <span className="text-red-400">95%</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full" style={{ width: '95%' }}></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-400">AI Confidence</span>
-                          <span className="text-green-400">98%</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{ width: '98%' }}></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-400">Analysis Speed</span>
-                          <span className="text-blue-400">&lt; 3s</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style={{ width: '100%' }}></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-center pt-4">
-                      <Link href="/analysis" className="inline-flex items-center text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
-                        Try Your Own Message
-                        <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>      </section>{/* Common Threats Section */}
+      {/* Common Threats Section */}
       <section id="common-threats" className="py-16 bg-slate-900/80">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-3 text-center">Digital Threats Detection</h2>
@@ -677,12 +334,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          
-          <div className="mt-10 text-center">
-            <Link href="/analysis" className="inline-block bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
-              🔍 Analyze a Suspicious Message
-            </Link>
-          </div>
+  
         </div>
       </section>{/* Cyber Attack Detection Section */}
       <section id="cyber-threats" className="py-16 bg-gradient-to-br from-indigo-900 to-slate-900">
@@ -769,395 +421,6 @@ export default function LandingPage() {
             </div>
           </div>
         </div>      </section>
-
-      {/* Interactive Threats Detection Section */}
-      <section 
-        id="threats" 
-        ref={el => { if (el) sectionsRef.current.threats = el; }}
-        className="py-20 bg-gradient-to-br from-red-900/20 via-slate-900 to-orange-900/20 relative overflow-hidden"
-      >
-        {/* Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="text-white">Live Threat</span>
-              <span className="block bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">
-                Detection Center
-              </span>
-            </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Watch our AI identify and analyze real-world scam patterns in real-time
-            </p>
-          </div>
-
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              {/* Live Threat Analysis */}
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-red-500/30">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white">Active Threat Analysis</h3>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-red-400 font-semibold">LIVE</span>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Current Threat Display */}
-                  <div className="bg-slate-900/70 rounded-2xl p-6 border border-red-500/50">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-red-400 text-xl">⚠️</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-lg font-semibold text-red-300">
-                            {threats[threatIndex].type}
-                          </h4>
-                          <div className="text-sm text-slate-400">
-                            Sample #{threatIndex + 1}/3
-                          </div>
-                        </div>
-                        
-                        <div className="bg-black/50 p-4 rounded-lg border-l-4 border-red-500 mb-4">
-                          <div className="text-white font-mono text-sm break-words">
-                            "{threats[threatIndex].example}"
-                          </div>
-                        </div>
-
-                        {/* Risk Assessment */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <div className="text-xs text-slate-400 mb-1">Risk Level</div>
-                            <div className="text-red-400 font-bold text-lg">
-                              {threats[threatIndex].risk}%
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-400 mb-1">Threat Category</div>
-                            <div className="text-orange-400 font-semibold">
-                              Very High
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Risk Progress Bar */}
-                        <div className="mb-4">
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-slate-400">Risk Assessment</span>
-                            <span className="text-red-400 font-semibold">{threats[threatIndex].risk}%</span>
-                          </div>
-                          <div className="w-full bg-slate-700 rounded-full h-3">
-                            <div 
-                              className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full transition-all duration-1000 relative overflow-hidden"
-                              style={{ width: `${threats[threatIndex].risk}%` }}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Threat Indicators */}
-                        <div>
-                          <div className="text-xs text-slate-400 mb-2">Detected Indicators</div>
-                          <div className="flex flex-wrap gap-2">
-                            {threats[threatIndex].indicators.map((indicator, index) => (
-                              <span 
-                                key={index}
-                                className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded-full border border-red-700/30"
-                              >
-                                {indicator}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Threat Navigation */}
-                  <div className="flex space-x-2">
-                    {threats.map((threat, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setThreatIndex(index)}
-                        className={`flex-1 p-4 rounded-xl transition-all duration-300 ${
-                          threatIndex === index
-                            ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/50'
-                            : 'bg-slate-800/30 border border-slate-700/50 hover:border-red-500/30'
-                        }`}
-                      >
-                        <div className="text-2xl mb-2">
-                          {index === 0 ? '🏦' : index === 1 ? '🎁' : '💼'}
-                        </div>
-                        <div className={`text-sm font-medium ${
-                          threatIndex === index ? 'text-red-400' : 'text-slate-400'
-                        }`}>
-                          {threat.type}
-                        </div>
-                        <div className={`text-xs mt-1 ${
-                          threatIndex === index ? 'text-orange-300' : 'text-slate-500'
-                        }`}>
-                          {threat.risk}% Risk
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Threat Statistics Dashboard */}
-              <div className="space-y-6">
-                {/* Real-time Stats */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
-                  <h4 className="text-xl font-semibold text-white mb-6">Threat Detection Stats</h4>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-red-400 mb-2">25,847</div>
-                      <div className="text-sm text-slate-400">Threats Blocked</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-400 mb-2">98.7%</div>
-                      <div className="text-sm text-slate-400">Detection Rate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-400 mb-2">1.2s</div>
-                      <div className="text-sm text-slate-400">Avg Analysis</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-purple-400 mb-2">24/7</div>
-                      <div className="text-sm text-slate-400">Protection</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Banking Phishing</span>
-                        <span className="text-red-400">45%</span>
-                      </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-red-500 to-red-400 h-2 rounded-full" style={{ width: '45%' }}></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Prize Scams</span>
-                        <span className="text-orange-400">30%</span>
-                      </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-orange-500 to-orange-400 h-2 rounded-full" style={{ width: '30%' }}></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Job Fraud</span>
-                        <span className="text-yellow-400">25%</span>
-                      </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-yellow-500 to-yellow-400 h-2 rounded-full" style={{ width: '25%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Confidence Meter */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
-                  <h4 className="text-lg font-semibold text-white mb-4">AI Confidence Level</h4>
-                  
-                  <div className="relative">
-                    <div className="text-center mb-4">
-                      <div className="text-4xl font-bold text-green-400 mb-2">97.8%</div>
-                      <div className="text-sm text-slate-400">Current Analysis Confidence</div>
-                    </div>
-                    
-                    <div className="relative w-full h-4 bg-slate-700 rounded-full overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"></div>
-                      <div className="absolute top-0 left-0 h-full bg-slate-700 rounded-full transition-all duration-1000" style={{ width: '2.2%' }}></div>
-                    </div>
-                    
-                    <div className="flex justify-between text-xs text-slate-400 mt-2">
-                      <span>Low</span>
-                      <span>High</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Call to Action */}
-                <div className="text-center">
-                  <Link 
-                    href="/analysis"
-                    className="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-red-500/25"
-                  >
-                    <span className="mr-2">🛡️</span>
-                    Test Your Message
-                    <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Modern Testimonials Section */}
-      <section 
-        id="testimonials" 
-        ref={el => { if (el) sectionsRef.current.testimonials = el; }}
-        className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden"
-      >
-        {/* Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-        </div>
-
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="text-white">What Our Users</span>
-              <span className="block bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-                Are Saying
-              </span>
-            </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Real stories from real people who avoided digital threats using our AI protection
-            </p>
-          </div>
-
-          <div className="max-w-6xl mx-auto">
-            {/* Featured Testimonial */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50 mb-12 relative">
-              <div className="absolute -top-6 left-8">
-                <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-full p-4">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                <div className="lg:col-span-2">
-                  <blockquote className="text-xl text-white mb-6 italic leading-relaxed">
-                    "{testimonials[testimonialIndex].message}"
-                  </blockquote>
-                  
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-2xl">
-                      {testimonials[testimonialIndex].avatar}
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-white">
-                        {testimonials[testimonialIndex].name}
-                      </div>
-                      <div className="text-slate-400">
-                        {testimonials[testimonialIndex].role}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center lg:text-right">
-                  <div className="flex justify-center lg:justify-end mb-4">
-                    {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                      <svg key={i} className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-3xl font-bold text-green-400 mb-2">
-                    ₱{testimonialIndex === 0 ? '10,000' : testimonialIndex === 1 ? '25,000' : '15,000'}
-                  </div>
-                  <div className="text-sm text-slate-400">Potential Loss Prevented</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial Navigation */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <button
-                  key={index}
-                  onClick={() => setTestimonialIndex(index)}
-                  className={`p-6 rounded-2xl transition-all duration-300 text-left ${
-                    testimonialIndex === index
-                      ? 'bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 transform scale-105'
-                      : 'bg-slate-800/30 border border-slate-700/50 hover:border-slate-600/50 hover:bg-slate-800/50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-lg">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <div className={`font-semibold ${
-                        testimonialIndex === index ? 'text-green-400' : 'text-white'
-                      }`}>
-                        {testimonial.name}
-                      </div>
-                      <div className="text-sm text-slate-400">{testimonial.role}</div>
-                    </div>
-                  </div>
-                  
-                  <p className={`text-sm ${
-                    testimonialIndex === index ? 'text-slate-200' : 'text-slate-400'
-                  } line-clamp-3`}>
-                    {testimonial.message}
-                  </p>
-                  
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="flex">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <div className={`text-xs ${
-                      testimonialIndex === index ? 'text-green-400' : 'text-slate-500'
-                    }`}>
-                      Verified User
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="mt-16 text-center">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div>
-                  <div className="text-3xl font-bold text-green-400 mb-2">12,847</div>
-                  <div className="text-sm text-slate-400">Users Protected</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-blue-400 mb-2">₱2.4M</div>
-                  <div className="text-sm text-slate-400">Money Saved</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-purple-400 mb-2">4.9/5</div>
-                  <div className="text-sm text-slate-400">User Rating</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-cyan-400 mb-2">99.1%</div>
-                  <div className="text-sm text-slate-400">Accuracy Rate</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works Section */}
       <section id="how-it-works" className="py-16 bg-slate-800/50">
         <div className="container mx-auto px-4 text-center">
@@ -1195,12 +458,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          
-          <div className="mt-12">
-            <Link href="/analysis" className="inline-block bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-xl transition-all duration-300 transform hover:scale-105">
-              Try It Now →
-            </Link>
-          </div>
+  
         </div>
       </section>
         {/* Image Analysis Highlight */}
@@ -1229,9 +487,6 @@ export default function LandingPage() {
                   <span className="text-slate-300">Detect voice cloning and audio manipulation</span>
                 </li>
               </ul>
-              <Link href="/analysis" className="inline-block bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors">
-                Try Multi-Modal Analysis
-              </Link>
             </div>
             <div className="w-full md:w-1/2 order-1 md:order-2">
               <div className="relative">
@@ -1279,14 +534,6 @@ export default function LandingPage() {
             <p className="text-white/80 text-lg mb-8 animate-fade-in delay-200">
               Don't risk becoming a victim of fraud. Our free tool helps you verify suspicious messages and images instantly.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in delay-400">
-              <Link href="/analysis" className="group bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 text-center transform hover:scale-105 hover:shadow-xl">
-                <span className="group-hover:animate-pulse">🚀</span> Start Analyzing Content
-              </Link>
-              <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="group bg-transparent border-2 border-white/70 text-white hover:bg-white/10 font-semibold py-4 px-8 rounded-lg transition-all duration-300 hover:border-white hover:transform hover:scale-105">
-                <span className="group-hover:animate-bounce">⬆️</span> Learn More
-              </button>
-            </div>
           </div>
         </div>
       </section>
