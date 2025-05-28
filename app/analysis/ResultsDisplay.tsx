@@ -105,33 +105,29 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (finalRiskPercentage >= 25) return 'bg-yellow-700 border-yellow-600 text-white';
     return 'bg-green-700 border-green-600 text-white';
   };
-
   // Generate a consistent status based on the calculated risk percentage
   const getConsistentRiskStatus = (percentage: number): string => {
     // Using strict thresholds to ensure UI consistency
-    if (percentage >= 75) return "Very High Risk Detected";
-    if (percentage >= 50) return "High Risk Detected";
-    if (percentage >= 25) return "Moderate Risk Detected";
-    return "Low Risk Detected";
+    if (percentage >= 75) return "Very High Risk Content";
+    if (percentage >= 50) return "High Risk Content";
+    if (percentage >= 25) return "Moderate Risk Content";
+    return "Low Risk Content";
   };
   // Use API's status if present, otherwise fallback to derived status
   const displayStatus = analysisResult.status || 
     (analysisResult.riskLevel ? 
       `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Detected` :
       getConsistentRiskStatus(finalRiskPercentage)); // Fallback to calculated
-    // Determine assessment text based on what the API provides or calculate it
+  // Determine assessment text based on risk level rather than focusing only on scams
   const getAssessmentText = (): string => {
     // First use the direct assessment if available from API
     if (analysisResult.assessment) return analysisResult.assessment;
     
-    // Otherwise calculate it based on isScam and probability
-    if (analysisResult.isScam === undefined) return "Assessment not available";
-    if (analysisResult.isScam) {
-      if (finalRiskPercentage >= 75) return "Highly Likely a Scam";
-      if (finalRiskPercentage >= 50) return "Likely a Scam";
-      return "Possibly Suspicious";
-    }
-    return "Likely Not a Scam";
+    // Otherwise calculate it based on risk percentage for a more neutral assessment
+    if (finalRiskPercentage >= 75) return "Very High Risk Content";
+    if (finalRiskPercentage >= 50) return "High Risk Content";
+    if (finalRiskPercentage >= 25) return "Moderate Risk Content";
+    return "Low Risk Content";
   };
 
   const assessmentText = getAssessmentText();
@@ -212,25 +208,24 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
               <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget}</p>
             )}
           </div>
-          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>
-            <p className="font-bold text-lg">
+          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>            <p className="font-bold text-lg">
               {finalRiskPercentage >= 75 
-                ? '🚨 Very High Risk' 
+                ? '🚨 Very High Risk Content' 
                 : finalRiskPercentage >= 50 
-                  ? '⚠️ High Risk'
+                  ? '⚠️ High Risk Content'
                   : finalRiskPercentage >= 25 
-                    ? '⚠️ Moderate Risk'
-                    : '✅ Low Risk'
+                    ? '⚠️ Moderate Risk Content'
+                    : '✅ Low Risk Content'
               } ({Math.round(finalRiskPercentage)}%)
-            </p>            <p className="text-sm mt-2 opacity-90">
+            </p><p className="text-sm mt-2 opacity-90">
               {analysisResult.riskSummary || 
                 (finalRiskPercentage < 25 
-                  ? '✅ Safe content with no suspicious elements detected' 
+                  ? '✅ Low risk content with no concerning elements detected' 
                   : finalRiskPercentage < 50 
-                    ? '⚠️ Possibly suspicious but not clearly malicious'
+                    ? '⚠️ Content with some potentially concerning elements'
                     : finalRiskPercentage < 75
-                      ? '🚨 Likely a scam with clear risk indicators'
-                      : '🔴 Dangerous content with multiple strong scam indicators')
+                      ? '🚨 High risk content with multiple concerning elements'
+                      : '🔴 Very high risk content that requires careful consideration')
               }
             </p>
           </div>
@@ -239,11 +234,10 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       
       {/* Detected Indicators Section */}
       {finalRiskPercentage > 15 && (
-        <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>
-          <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
+        <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>          <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
             <span className="mr-2">🔎</span>
-            Detected Indicators
-          </h3>            {/* Use API-provided indicators if available, otherwise fallback to detected ones */}
+            Content Analysis Factors
+          </h3>{/* Use API-provided indicators if available, otherwise fallback to detected ones */}
             {(analysisResult.indicators && analysisResult.indicators.length > 0) ? (
               <div className="bg-gray-900/80 rounded-xl p-4">
                 <div className="flex flex-wrap gap-2">
@@ -256,13 +250,12 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                     </span>
                   ))}
                 </div>
-              </div>
-            ) : finalIndicators.length === 0 ? (
+              </div>            ) : finalIndicators.length === 0 ? (
               <div className="bg-white/60 dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
                 <p className="text-sm italic text-gray-600 dark:text-gray-400">
                   {finalRiskPercentage < 25 
-                    ? 'No significant risk indicators detected in this content.' 
-                    : 'No specific indicators detected. Please refer to the detailed explanation below.'}
+                    ? 'No significant factors detected in this content.' 
+                    : 'No specific factors identified. Please refer to the detailed explanation below.'}
                 </p>
               </div>
             ) : (
@@ -341,10 +334,9 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       {/* Limited Context Warning - This section is removed as limited_context is no longer part of ScamDetectionResult */}
 
       {/* How to Avoid Scams (Tutorials and Tips) */}
-      <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>
-        <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
+      <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>        <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
           <span className="mr-2">🛡️</span>
-          How to Avoid Scams
+          Safety & Security Tips
         </h3>
         <div className="bg-white dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
           <ul className="space-y-3">
@@ -369,10 +361,9 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       </div>
 
       {/* Reporting Section (Complaint Filing Info) */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
           <span className="mr-2">📢</span>
-          Where to Report This Scam
+          Relevant Reporting Resources
         </h3>
         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
           {analysisResult.complaintFilingInfo?.introduction && (
@@ -462,7 +453,81 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
         </div>
       )}
 
-      {/* What to Do If Scammed - This section is removed as these fields are no longer part of ScamDetectionResult */}
+      {/* What to Do Section - Adding new section to provide neutral advice based on content analysis */}
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg">
+        <h3 className="text-xl font-bold mb-4 text-indigo-800 dark:text-indigo-200 flex items-center">
+          <span className="mr-2">🛠️</span>
+          What To Do With This Content
+        </h3>
+        <div className="bg-white dark:bg-indigo-950/30 rounded-lg p-4 border border-indigo-200 dark:border-indigo-600">
+          <p className="text-sm text-indigo-800 dark:text-indigo-100 whitespace-pre-wrap leading-relaxed mb-4">
+            Based on the analysis of this content, here are some recommended actions:
+          </p>
+          <ul className="space-y-3">
+            {finalRiskPercentage >= 75 ? (
+              <>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">!</span>
+                  <span className="leading-relaxed">Exercise extreme caution with this content as it contains significant indicators of potential harm.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                  <span className="leading-relaxed">Do not provide personal information, financial details, or access to your devices.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                  <span className="leading-relaxed">Consider reporting this content to the appropriate authorities or platform administrators.</span>
+                </li>
+              </>
+            ) : finalRiskPercentage >= 50 ? (
+              <>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                  <span className="leading-relaxed">Approach this content with caution as our analysis detected potential concerns.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                  <span className="leading-relaxed">Verify information through official or trusted sources before taking action.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                  <span className="leading-relaxed">Be especially cautious if the content requests any personal or financial information.</span>
+                </li>
+              </>
+            ) : finalRiskPercentage >= 25 ? (
+              <>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                  <span className="leading-relaxed">Review this content with some caution as our analysis indicates some minor concerns.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                  <span className="leading-relaxed">Consider cross-checking information with other sources if you have any doubts.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                  <span className="leading-relaxed">Use general internet safety practices when interacting with this content.</span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                  <span className="leading-relaxed">This content appears to be low risk based on our analysis.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                  <span className="leading-relaxed">As with all online content, standard internet safety practices are still recommended.</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                  <span className="leading-relaxed">Feel free to interact with the content while adhering to normal digital literacy practices.</span>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
