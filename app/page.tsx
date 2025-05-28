@@ -465,32 +465,31 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="group flex flex-col items-center cursor-pointer hover:transform hover:scale-105 transition-all duration-500">
               <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mb-4 shadow-lg group-hover:shadow-2xl group-hover:animate-pulse transition-all duration-300">1</div>              <h3 className="text-xl font-semibold mb-2 group-hover:text-sky-400 transition-colors">Input Content</h3>
-              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Navigate to the 'Analyze Content' page and paste suspicious text, upload images, or provide audio files for comprehensive threat analysis.</p>
-              <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Navigate to the 'Analyze Content' page and paste suspicious text, upload images, or provide audio files for comprehensive threat analysis.</p>              <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="bg-slate-700/50 p-3 rounded-lg border border-sky-500/30">
-                  <div className="text-xs text-sky-400 font-mono">"Suspicious message here..."</div>
+                  <div className="text-xs text-sky-400 font-mono">Send text, image or audio for analysis</div>
                 </div>
               </div>
             </div>
             <div className="group flex flex-col items-center cursor-pointer hover:transform hover:scale-105 transition-all duration-500">
               <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mb-4 shadow-lg group-hover:shadow-2xl group-hover:animate-pulse transition-all duration-300">2</div>              <h3 className="text-xl font-semibold mb-2 group-hover:text-sky-400 transition-colors">AI Threat Analysis</h3>
-              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Our advanced AI system analyzes content using multiple detection models to identify various threat types and attack vectors.</p>
+              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Our AI system processes your content using sophisticated detection algorithms designed to identify scams, frauds, and digital threats.</p>
               <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="bg-slate-700/50 p-3 rounded-lg border border-sky-500/30">
                   <div className="text-xs text-sky-400 flex items-center">
                     <div className="w-2 h-2 bg-sky-400 rounded-full animate-ping mr-2"></div>
-                    Analyzing...
+                    Analyzing all potential threats...
                   </div>
                 </div>
               </div>
             </div>
             <div className="group flex flex-col items-center cursor-pointer hover:transform hover:scale-105 transition-all duration-500">
               <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mb-4 shadow-lg group-hover:shadow-2xl group-hover:animate-pulse transition-all duration-300">3</div>              <h3 className="text-xl font-semibold mb-2 group-hover:text-sky-400 transition-colors">View Results</h3>
-              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Receive detailed threat assessment with risk levels, attack indicators, protective recommendations, and reporting guidance.</p>
+              <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Get a comprehensive security assessment with detailed explanations, risk indicators, and recommended actions in both English and Tagalog.</p>
               <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="bg-slate-700/50 p-3 rounded-lg border border-red-500/30">
-                  <div className="text-xs text-red-400 font-semibold">Risk: Very High</div>
-                  <div className="text-xs text-slate-300">Probability: 95%</div>
+                  <div className="text-xs text-red-400 font-semibold">Complete risk assessment</div>
+                  <div className="text-xs text-slate-300">With actionable advice</div>
                 </div>
               </div>
             </div>
@@ -501,48 +500,163 @@ export default function LandingPage() {
         {/* Image Analysis Highlight */}
       <section id="image-analysis" className="py-16 bg-slate-800">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center gap-8 max-w-5xl mx-auto">
-            <div className="w-full md:w-1/2 order-2 md:order-1">              <h2 className="text-3xl md:text-4xl font-bold mb-4">Advanced: Multi-Modal Threat Analysis</h2>
-              <p className="text-slate-300 mb-6">
-                Our AI system analyzes images, videos, and audio content to detect sophisticated threats including deepfakes, manipulated media, and visual deception tactics.
-              </p>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start">
-                  <span className="text-sky-400 mr-2">✓</span>
-                  <span className="text-slate-300">Detect deepfake videos and AI-generated content</span>
+          <div className="flex flex-col md:flex-row items-center gap-8 max-w-5xl mx-auto">            <div className="w-full md:w-1/2 order-2 md:order-1">              
+              <div className="relative">
+                <div className="absolute -left-2 -top-2 w-12 h-12 bg-blue-500/20 rounded-full blur-xl"></div>
+                <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-sky-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">Comprehensive Threat Detection</h2>
+              </div>
+              <p className="text-slate-300 mb-6 text-lg">
+                Our intelligent system analyzes <span className="font-semibold text-cyan-400">text</span>, <span className="font-semibold text-sky-400">images</span>, and <span className="font-semibold text-blue-400">audio</span> using advanced AI to identify sophisticated digital threats before they can harm you.
+              </p>              <ul className="space-y-4 mb-6">
+                <li className="group flex items-start bg-slate-800/30 p-3 rounded-lg border-l-2 border-sky-500 hover:bg-slate-800/50 hover:border-l-4 transition-all duration-300">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 mr-3 group-hover:scale-110 group-hover:bg-sky-500/20 transition-all duration-300 group-hover:text-sky-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 group-hover:animate-pulse3D" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 11 12 14 22 4"></polyline>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                  </span>
+                  <div>
+                    <span className="text-slate-200 group-hover:text-white transition-colors">Instant analysis of <span className="text-sky-400">messages</span>, <span className="text-blue-400">emails</span>, and <span className="text-cyan-400">website URLs</span></span>
+                    <div className="h-0.5 w-0 bg-gradient-to-r from-sky-500 to-blue-500 mt-1 group-hover:w-full transition-all duration-700"></div>
+                  </div>
                 </li>
-                <li className="flex items-start">
-                  <span className="text-sky-400 mr-2">✓</span>
-                  <span className="text-slate-300">Analyze suspicious QR codes and malicious links</span>
+                
+                <li className="group flex items-start bg-slate-800/30 p-3 rounded-lg border-l-2 border-sky-500 hover:bg-slate-800/50 hover:border-l-4 transition-all duration-300">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 mr-3 group-hover:scale-110 group-hover:bg-sky-500/20 transition-all duration-300 group-hover:text-sky-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 group-hover:animate-pulse3D" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                  </span>
+                  <div>
+                    <span className="text-slate-200 group-hover:text-white transition-colors">Detection of <span className="text-sky-400">manipulated images</span>, <span className="text-blue-400">fake documents</span>, and <span className="text-cyan-400">malicious QR codes</span></span>
+                    <div className="h-0.5 w-0 bg-gradient-to-r from-sky-500 to-blue-500 mt-1 group-hover:w-full transition-all duration-700"></div>
+                  </div>
                 </li>
-                <li className="flex items-start">
-                  <span className="text-sky-400 mr-2">✓</span>
-                  <span className="text-slate-300">Identify manipulated images and fake documents</span>
+                
+                <li className="group flex items-start bg-slate-800/30 p-3 rounded-lg border-l-2 border-sky-500 hover:bg-slate-800/50 hover:border-l-4 transition-all duration-300">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 mr-3 group-hover:scale-110 group-hover:bg-sky-500/20 transition-all duration-300 group-hover:text-sky-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 group-hover:animate-pulse3D" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" x2="12" y1="19" y2="22"></line>
+                    </svg>
+                  </span>
+                  <div>
+                    <span className="text-slate-200 group-hover:text-white transition-colors">Analysis of <span className="text-sky-400">voice recordings</span> for <span className="text-blue-400">scams</span> and <span className="text-cyan-400">impersonation attempts</span></span>
+                    <div className="h-0.5 w-0 bg-gradient-to-r from-sky-500 to-blue-500 mt-1 group-hover:w-full transition-all duration-700"></div>
+                  </div>
                 </li>
-                <li className="flex items-start">
-                  <span className="text-sky-400 mr-2">✓</span>
-                  <span className="text-slate-300">Detect voice cloning and audio manipulation</span>
+                
+                <li className="group flex items-start bg-slate-800/30 p-3 rounded-lg border-l-2 border-sky-500 hover:bg-slate-800/50 hover:border-l-4 transition-all duration-300">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 mr-3 group-hover:scale-110 group-hover:bg-sky-500/20 transition-all duration-300 group-hover:text-sky-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 group-hover:animate-pulse3D" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </span>
+                  <div>
+                    <span className="text-slate-200 group-hover:text-white transition-colors">Detailed <span className="text-sky-400">security reports</span> with <span className="text-blue-400">actionable advice</span> in <span className="text-cyan-400">multiple languages</span></span>
+                    <div className="h-0.5 w-0 bg-gradient-to-r from-sky-500 to-blue-500 mt-1 group-hover:w-full transition-all duration-700"></div>
+                  </div>
                 </li>
               </ul>
-            </div>
-            <div className="w-full md:w-1/2 order-1 md:order-2">
+            </div>            <div className="w-full md:w-1/2 order-1 md:order-2">
               <div className="relative">
                 <div className="absolute -inset-4 bg-sky-500 opacity-30 blur-xl rounded-3xl"></div>
-                <div className="relative bg-slate-900 p-2 rounded-xl shadow-2xl border border-sky-500/30">
-                  <div className="aspect-[4/3] bg-slate-800 rounded-lg overflow-hidden relative flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <svg className="w-24 h-24 text-sky-500/20" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M5.5 13a3.5 3.5 0 0 1 0-7h.5a5 5 0 0 1 9.975.5H16a4 4 0 1 1 0 8h-1.5a1 1 0 0 1 0-2H16a2 2 0 1 0 0-4h-1.025A7 7 0 0 0 2 9.5a5.5 5.5 0 0 0 5.5 5.5h.5a1 1 0 0 1 0 2h-.5z"/>
-                        <path d="M10 17a1 1 0 0 1-1-1v-4a1 1 0 1 1 2 0v4a1 1 0 0 1-1 1z"/>
-                      </svg>
-                    </div>
-                    <div className="absolute bottom-3 left-3 right-3 bg-slate-900/80 backdrop-blur-sm rounded-lg p-3">
-                      <div className="text-sm font-semibold text-sky-400">Image Analysis</div>
-                      <div className="text-xs text-slate-300">Upload screenshot or photo to analyze</div>
+                <div className="relative bg-slate-900 p-2 rounded-xl shadow-2xl border border-sky-500/30 group hover:border-sky-400 transition-all duration-500">
+                  <div className="aspect-[4/3] bg-slate-800 rounded-lg overflow-hidden relative flex items-center justify-center group-hover:bg-slate-800/80 transition-all duration-300">                    <div className="absolute inset-0 flex items-center justify-center">
+                      {/* Animated upload icon */}
+                      <div className="relative">
+                        {/* Animated circles */}
+                        <div className="absolute inset-0 -m-8 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full animate-ping opacity-0 group-hover:opacity-100 [animation-duration:3s]"></div>
+                        <div className="absolute inset-0 -m-6 bg-gradient-to-r from-cyan-500/20 to-blue-500/30 rounded-full animate-pulse opacity-0 group-hover:opacity-100 [animation-duration:2s] [animation-delay:0.3s]"></div>
+                        
+                        {/* Main upload icon */}
+                        <svg className="w-24 h-24 text-sky-500/20 group-hover:text-sky-500/60 transition-all duration-700 group-hover:scale-110 relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M7 16a4 4 0 0 1-.88-7.903A5 5 0 1 1 15.9 6L16 6a5 5 0 0 1 1 9.9M15 13l-3 3m0 0l-3-3m3 3V9" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            fill="none"
+                            className="group-hover:animate-uploadArrow" 
+                          />
+                        </svg>
+                        
+                        {/* Animated particles */}
+                        <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-sky-400 rounded-full opacity-0 group-hover:opacity-80 group-hover:animate-particle1 [animation-delay:0.2s]"></div>
+                        <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-blue-400 rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-particle2 [animation-delay:0.5s]"></div>
+                        <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-cyan-400 rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-particle3 [animation-delay:0.7s]"></div>
+                      </div>
+                      {/* Animated underline */}
+                      <div className="absolute -bottom-1 w-16 h-1 bg-sky-500 rounded-full opacity-0 group-hover:opacity-80 group-hover:translate-y-2 transition-all duration-500"></div>
+                    </div>                    <div className="absolute inset-x-4 bottom-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-4 border border-sky-500/20 transform group-hover:translate-y-1 transition-all duration-300 group-hover:border-sky-500/50">
+                      <div className="relative">
+                        {/* Animated highlight */}
+                        <div className="absolute -inset-1 bg-gradient-to-r from-sky-500/30 to-blue-500/30 rounded-lg blur opacity-0 group-hover:opacity-100 transition-all duration-700 animate-pulse3D"></div>
+                        
+                        <div className="relative">
+                          <div className="flex items-center mb-1">
+                            <div className="w-3 h-3 bg-gradient-to-r from-sky-500 to-blue-500 rounded-full mr-2 group-hover:animate-pulse3D"></div>
+                            <div className="text-lg font-semibold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">Advanced Image Analysis</div>
+                          </div>
+                          <div className="text-sm text-slate-300 group-hover:text-white transition-colors duration-300">Upload screenshots, photos, documents or QR codes for instant threat detection</div>
+                          <div className="flex flex-wrap items-center gap-2 mt-3">
+                            <div className="flex items-center bg-sky-900/30 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+                              <div className="w-2 h-2 bg-sky-400 rounded-full mr-2 animate-pulse"></div>
+                              <span className="text-sky-300/90">JPEG</span>
+                            </div>
+                            <div className="flex items-center bg-blue-900/30 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+                              <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                              <span className="text-blue-300/90">PNG</span>
+                            </div>
+                            <div className="flex items-center bg-cyan-900/30 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+                              <div className="w-2 h-2 bg-cyan-400 rounded-full mr-2 animate-pulse"></div>
+                              <span className="text-cyan-300/90">WebP</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </div>              </div>
+            </div>
+          </div>          <div className="mt-10 text-center">
+            <div className="relative inline-block">
+              {/* Animated effects around the button */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full blur-lg opacity-70 animate-pulse3D"></div>
+              <div className="absolute -inset-3 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-full blur-xl opacity-50 animate-pulse [animation-duration:3s]"></div>
+              
+              {/* Main button */}
+              <Link 
+                href="/analysis"
+                className="group relative inline-flex items-center justify-center px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-medium rounded-xl overflow-hidden transition-all duration-300 shadow-lg hover:shadow-sky-500/30 animate-float [animation-duration:4s]"
+              >
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-sky-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                <span className="absolute inset-0 w-full h-full animate-glow [animation-duration:2s]">
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-sky-400/10 via-blue-500/10 to-purple-500/10 blur-lg rounded-xl"></span>
+                </span>
+                
+                <span className="relative z-20 flex items-center text-lg font-semibold">
+                  <svg className="w-6 h-6 mr-2 group-hover:animate-pulse3D" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 16L8 11L13 16L21 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16 8H21V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Try Threat Detection Now
+                  <svg className="ml-2 w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  
+                  {/* Small particle effects on hover */}
+                  <span className="absolute top-0 right-0 -mt-1 -mr-1 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"></span>
+                  <span className="absolute bottom-0 left-0 -mb-1 -ml-1 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping [animation-delay:0.2s]"></span>
+                </span>
+              </Link>
             </div>
           </div>
         </div>
