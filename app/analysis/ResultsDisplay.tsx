@@ -112,22 +112,132 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (percentage >= 50) return "High Risk Content";
     if (percentage >= 25) return "Moderate Risk Content";
     return "Low Risk Content";
-  };
-  // Use API's status if present, otherwise fallback to derived status
+  };  // Use API's status if present, otherwise fallback to derived status
   const displayStatus = analysisResult.status || 
     (analysisResult.riskLevel ? 
-      `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Detected` :
-      getConsistentRiskStatus(finalRiskPercentage)); // Fallback to calculated
-  // Determine assessment text based on risk level rather than focusing only on scams
+      `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Content` :
+      getConsistentRiskStatus(finalRiskPercentage)); // Fallback to calculated// Intelligent assessment that adapts based on content type, purpose, and risk level
   const getAssessmentText = (): string => {
-    // First use the direct assessment if available from API
-    if (analysisResult.assessment) return analysisResult.assessment;
+    // Analyze content characteristics from available data
+    const contentType = (analysisResult.contentType || "").toLowerCase();
+    const contentPurpose = (analysisResult.contentPurpose || "").toLowerCase();
+    const audienceTarget = (analysisResult.audienceTarget || "").toLowerCase();
     
-    // Otherwise calculate it based on risk percentage for a more neutral assessment
-    if (finalRiskPercentage >= 75) return "Very High Risk Content";
-    if (finalRiskPercentage >= 50) return "High Risk Content";
-    if (finalRiskPercentage >= 25) return "Moderate Risk Content";
-    return "Low Risk Content";
+    // Check for API assessment, but NEVER use it if it mentions "scam"
+    const apiAssessmentHasScam = analysisResult.assessment && 
+                              analysisResult.assessment.toLowerCase().includes("scam");
+    
+    // Function to get content category based on available information
+    const getContentCategory = () => {
+      // Check for software/tech related content
+      if (contentPurpose.match(/software|activation|license|windows|office|product key|crack|keygen|patch/i) ||
+          contentType.includes("software")) {
+        return "software";
+      }
+      
+      // Check for financial content
+      if (contentPurpose.match(/invest|banking|loan|credit|money|payment|financial|finance|bitcoin|crypto|earn|income/i) ||
+          audienceTarget.match(/investor|saver|borrower|customer/i)) {
+        return "financial";
+      }
+      
+      // Check for e-commerce content
+      if (contentPurpose.match(/buy|sell|shop|product|store|discount|offer|deal|purchase/i) ||
+          contentType.match(/store|shop|ecommerce/i)) {
+        return "ecommerce";
+      }
+      
+      // Check for communication content
+      if (contentType.match(/email|message|chat|sms|communication/i) ||
+          contentPurpose.match(/contact|reach out|verify|confirm|account/i)) {
+        return "communication";
+      }
+      
+      // Check for social media content
+      if (contentType.match(/social media|profile|post|account/i) ||
+          contentPurpose.match(/friend|follow|like|share|connect/i)) {
+        return "social";
+      }
+      
+      // Check for health-related content
+      if (contentPurpose.match(/health|medical|treatment|cure|medicine|weight|diet|supplement/i)) {
+        return "health";
+      }
+      
+      // Website is a fallback if we know it's a website but can't categorize further
+      if (contentType.match(/website|url|web page/i)) {
+        return "website";
+      }
+      
+      // General content - no specific category identified
+      return "general";
+    };
+    
+    // Get the content category
+    const category = getContentCategory();
+    
+    // If API assessment exists but contains "scam", override it with our content-specific assessment
+    if (apiAssessmentHasScam || !analysisResult.assessment) {
+      // Provide assessments based on content category and risk level
+      switch (category) {
+        case "software":
+          if (finalRiskPercentage >= 75) return "Potentially Harmful Software Resource";
+          if (finalRiskPercentage >= 50) return "Unauthorized Software Modification Tool";
+          if (finalRiskPercentage >= 25) return "Software With Potential Security Concerns";
+          return "Standard Software Resource";
+          
+        case "financial":
+          if (finalRiskPercentage >= 75) return "Highly Questionable Financial Proposition";
+          if (finalRiskPercentage >= 50) return "Financially Risky Opportunity";
+          if (finalRiskPercentage >= 25) return "Financial Content With Some Concerns";
+          return "Standard Financial Information";
+          
+        case "ecommerce":
+          if (finalRiskPercentage >= 75) return "Potentially Fraudulent Marketplace";
+          if (finalRiskPercentage >= 50) return "Questionable Shopping Resource";
+          if (finalRiskPercentage >= 25) return "Online Store With Verification Needed";
+          return "Standard E-commerce Platform";
+          
+        case "communication":
+          if (finalRiskPercentage >= 75) return "Highly Suspicious Communication";
+          if (finalRiskPercentage >= 50) return "Potentially Misleading Message";
+          if (finalRiskPercentage >= 25) return "Communication With Some Concerns";
+          return "Standard Digital Communication";
+          
+        case "social":
+          if (finalRiskPercentage >= 75) return "Highly Questionable Social Media Content";
+          if (finalRiskPercentage >= 50) return "Potentially Misleading Social Content";
+          if (finalRiskPercentage >= 25) return "Social Media Content With Some Concerns";
+          return "Standard Social Media Content";
+          
+        case "health":
+          if (finalRiskPercentage >= 75) return "Potentially Dangerous Health Claims";
+          if (finalRiskPercentage >= 50) return "Questionable Health Information";
+          if (finalRiskPercentage >= 25) return "Health Content Requiring Verification";
+          return "General Health Information";
+          
+        case "website":
+          if (finalRiskPercentage >= 75) return "Website With Critical Security Risks";
+          if (finalRiskPercentage >= 50) return "Website With Significant Security Concerns";
+          if (finalRiskPercentage >= 25) return "Website With Moderate Security Concerns";
+          return "Standard Website Content";
+          
+        case "general":
+        default:
+          if (finalRiskPercentage >= 75) return "Content With Critical Security Concerns";
+          if (finalRiskPercentage >= 50) return "Content With Significant Risk Factors";
+          if (finalRiskPercentage >= 25) return "Content With Moderate Concerns";
+          return "Content With Minimal Risk Factors";
+      }
+    }
+    
+    // Use API's assessment only if it doesn't contain "scam"
+    if (analysisResult.assessment && !apiAssessmentHasScam) {
+      return analysisResult.assessment;
+    }
+    
+    // Ultimate fallback (though code should never reach here)
+    return getConsistentRiskStatus(finalRiskPercentage);
   };
 
   const assessmentText = getAssessmentText();
