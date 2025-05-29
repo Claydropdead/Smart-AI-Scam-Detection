@@ -688,24 +688,13 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      
-      {/* Footer */}
+        {/* Footer */}
       <footer className="bg-slate-900 py-8">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">            <div className="text-center md:text-left mb-4">
-              <Link href="/" className="text-2xl font-bold text-sky-400 hover:text-sky-300 transition-colors">
-                ThreatShield AI
-              </Link>
-            </div>
-            <div className="flex flex-col md:flex-row gap-4">
-              <Link href="/" className="text-slate-300 hover:text-sky-400 transition-colors">Home</Link>
-              <Link href="/analysis" className="text-slate-300 hover:text-sky-400 transition-colors">Analyze Content</Link>
-              <Link href="/about" className="text-slate-300 hover:text-sky-400 transition-colors">About Us</Link>
-              <Link href="/contact" className="text-slate-300 hover:text-sky-400 transition-colors">Contact</Link>
-            </div>
-          </div>
-          <div className="border-t border-slate-700 mt-4 pt-4 text-center">
+          {/* Removed navigation and title */}
+          <div className="text-center">
             <p className="text-slate-400 text-sm">&copy; 2025 ThreatShield AI. All rights reserved.</p>
+            <p className="text-slate-400 text-sm mt-1">Made with <span className="text-red-500">❤</span> by <a href="https://pinesprojects.hashnode.dev" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300 transition-colors">Pinesprojects</a></p>
           </div>
         </div>      </footer>
 
