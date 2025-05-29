@@ -666,12 +666,22 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Enhanced Footer */}        <footer className="mt-16 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg p-8">
-          <div className="text-center">              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              &copy; {new Date().getFullYear()} ThreatShield AI. All rights reserved.
-            </p>
+        {/* Enhanced Footer */}
+        <footer className="mt-16 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg p-8">
+          <div className="text-center">
+            <div className="flex justify-center items-center space-x-4 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🛡️</span>
+              </div>              <div>
+                <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  ThreatShield AI
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Protecting you from digital scams</p>
+              </div>
+            </div>
+            
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Made with <span className="text-red-400">❤</span> by PinesProjects
+              &copy; {new Date().getFullYear()} AI Scam Detection. All rights reserved.
             </p>
             
             <div className="flex justify-center items-center space-x-6 mb-4">
@@ -685,7 +695,15 @@ export default function Home() {
                 <p className="font-mono text-xs text-gray-500 dark:text-gray-400">Powered by Gemini 2.0 Flash</p>
               </div>
             </div>
-  
+            
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <button 
+                onClick={() => setShowTermsModal(true)} 
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
+              >
+                📋 Terms and Conditions
+              </button>
+            </div>
           </div>
         </footer>
       </div>

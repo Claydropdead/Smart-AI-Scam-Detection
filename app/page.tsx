@@ -3,9 +3,13 @@
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function LandingPage() {  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState('hero');
-  const [isScrolled, setIsScrolled] = useState(false);  // Removed unused state variables for auto-rotation
+  const [isScrolled, setIsScrolled] = useState(false);
+  // These state variables are used in auto-rotation intervals and referenced in JSX
+  const [threatIndex, setThreatIndex] = useState(0); // Used in auto-rotation
+  const [testimonialIndex, setTestimonialIndex] = useState(0); // Used in auto-rotation
   const [displayText, setDisplayText] = useState("");
   const fullText = "Protect Yourself from Digital Threats";
   
@@ -108,11 +112,21 @@ export default function LandingPage() {  const [isMenuOpen, setIsMenuOpen] = use
       if (current) setCurrentSection(current);
     };
 
-    window.addEventListener('scroll', handleScroll);    // We don't need auto-rotation anymore since we're not using threatIndex and testimonialIndex
-    // Auto-rotation has been removed as it's not being used in the UI
+    window.addEventListener('scroll', handleScroll);
+
+    // Auto-rotate threats and testimonials
+    const threatInterval = setInterval(() => {
+      setThreatIndex(prev => (prev + 1) % threats.length);
+    }, 6000);
+
+    const testimonialInterval = setInterval(() => {
+      setTestimonialIndex(prev => (prev + 1) % testimonials.length);
+    }, 4000);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      clearInterval(threatInterval);
+      clearInterval(testimonialInterval);
     };
   }, [fullText, threats.length, testimonials.length]);
 
@@ -238,15 +252,16 @@ export default function LandingPage() {  const [isMenuOpen, setIsMenuOpen] = use
         </div>
 
         <div className="relative z-10 container mx-auto px-6 py-20 text-center">
-          <div className="max-w-5xl mx-auto">            {/* Main Headline */}            <div className="mb-8">              <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">                <div className="relative flex justify-center">
+          <div className="max-w-5xl mx-auto">            {/* Main Headline */}            <div className="mb-8">              <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+                <div className="relative flex justify-center">
                   <div className="border-r-4 border-white animate-blink">
-                    <span className="text-white">
-                      {displayText.slice(0, Math.min(displayText.length, "Protect Yourself from ".length))}
-                    </span>
-                    {displayText.length > "Protect Yourself from ".length && (
-                      <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-                        {displayText.slice("Protect Yourself from ".length)}
-                      </span>
+                    {displayText.includes("Digital Threats") ? (
+                      <>
+                        <span className="text-white">Protect Yourself from </span>
+                        <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">Digital Threats</span>
+                      </>
+                    ) : (
+                      <span className="text-white">{displayText}</span>
                     )}
                   </div>
                 </div>
@@ -688,9 +703,9 @@ export default function LandingPage() {  const [isMenuOpen, setIsMenuOpen] = use
               <Link href="/about" className="text-slate-300 hover:text-sky-400 transition-colors">About Us</Link>
               <Link href="/contact" className="text-slate-300 hover:text-sky-400 transition-colors">Contact</Link>
             </div>
-          </div>          <div className="border-t border-slate-700 mt-4 pt-4 text-center">
+          </div>
+          <div className="border-t border-slate-700 mt-4 pt-4 text-center">
             <p className="text-slate-400 text-sm">&copy; 2025 ThreatShield AI. All rights reserved.</p>
-            <p className="text-slate-400 text-sm mt-1">Made with <span className="text-red-400">❤</span> by PinesProjects</p>
           </div>
         </div>      </footer>
 
