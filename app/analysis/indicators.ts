@@ -164,10 +164,14 @@ export const commonIndicators: CommonIndicators = {
     patterns: ["sim", "text", "message", "call", "globe", "smart", "dito", "tm", "sun", "tnt", "load", "promo", "data", "points", "rewards", "winner", "subscriber", "subscriber"],
     severity: 3,
     detected: false
-  },
-  "Filipino investment scam": {
+  },  "Filipino investment scam": {
     patterns: ["gusto niyo po bang sumali", "sumali habang may promo", "gusto mo bang kumita", "kumita ng pera", "puhunan", "guaranteed earnings", "walang risk", "fully insured", "limited slot", "limited slots", "may slot", "may slots", "trading", "futurew", "futurewealth", "habang may promo", "weekly kahit", "kahit maliit", "kahit konti", "kahit", "lang ang puhunan", "lang puhunan", "kikitain mo", "kikita ka"],
     severity: 5,
+    detected: false
+  },
+  "Voice message scam": {
+    patterns: ["voice recording", "voice message", "audio message", "listen to this", "ito ang number", "tawagan mo", "tawag", "i-call", "tatawag", "callback", "magkano", "need money", "pera", "send money", "click the link", "click link", "visit this", "check the website", "check website", "pumunta sa", "pakinggan mo", "makinig ka", "makinig kayo", "record", "recorded", "recording", "voice", "boses", "pakibuksan", "please open", "pakitingnan"],
+    severity: 4,
     detected: false
   }
 };
@@ -268,11 +272,15 @@ export function calculateRiskPercentage(
   if (maxPossibleSeverity > 0) {
     // Base calculation on severity of detected indicators
     calculatedRiskPercentage = Math.min(100, Math.round((totalSeverity / Math.max(28, maxPossibleSeverity * 0.3)) * 100));
-    
-    // Adjust based on number of indicators detected (more indicators = higher risk)
+      // Adjust based on number of indicators detected (more indicators = higher risk)
     if (detectedCount >= 5) calculatedRiskPercentage = Math.min(100, calculatedRiskPercentage + 15);
     else if (detectedCount >= 3) calculatedRiskPercentage = Math.min(100, calculatedRiskPercentage + 10);
     else if (detectedCount >= 2) calculatedRiskPercentage = Math.min(100, calculatedRiskPercentage + 5);
+    
+    // Special handling for Voice message scam - if detected, ensure higher risk
+    if (patternMatches["Voice message scam"]) {
+      calculatedRiskPercentage = Math.max(calculatedRiskPercentage, 60);
+    }
     
     // If high-severity indicators detected, ensure minimum risk level
     const hasHighSeverityIndicator = Object.values(patternMatches).some(m => m.severity >= 5);

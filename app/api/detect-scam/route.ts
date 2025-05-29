@@ -469,11 +469,38 @@ export async function POST(request: NextRequest) {
     // Use empty string if content is not provided but image/audio is
     const textContent = content || '';
     
-    try {
-      let analysis;
-      if (audioBase64) {
-        // Handle audio analysis specially
+    try {      let analysis;      if (audioBase64) {
+        // Handle audio analysis specially, but make sure it's properly populated
         analysis = await analyzeWithGeminiAudio(textContent, audioBase64, imageBase64);
+        
+        // Ensure we have proper mainExplanation and audioAnalysis fields
+        if (!analysis.mainExplanation && !analysis.audioAnalysis) {
+          // If both are missing, generate a basic explanation based on the content
+          analysis.mainExplanation = "Voice recording analysis: The content requires careful assessment for potential risks.";
+          analysis.audioAnalysis = "Voice recording detected. Analysis performed on audio content.";
+        } else if (!analysis.audioAnalysis) {
+          // If only audioAnalysis is missing, copy from mainExplanation
+          analysis.audioAnalysis = analysis.mainExplanation;
+        } else if (!analysis.mainExplanation) {
+          // If only mainExplanation is missing, copy from audioAnalysis
+          analysis.mainExplanation = analysis.audioAnalysis;
+        }
+        
+        // Make sure these fields exist for consistent processing
+        if (!analysis.detailedRiskAnalysis) {
+          analysis.detailedRiskAnalysis = analysis.mainExplanation || analysis.audioAnalysis || 
+            "Voice recording analyzed for potential scams and security risks.";
+        }
+        
+        // Ensure Tagalog explanations exist
+        if (!analysis.detailedRiskAnalysisTagalog) {
+          analysis.detailedRiskAnalysisTagalog = "Pagsusuri sa voice recording: Ang nilalaman nito ay dapat suriin nang mabuti para sa mga posibleng panganib.";
+        }
+        
+        // Make sure we have at least one risk category for proper display
+        if (!analysis.riskCategories || analysis.riskCategories.length === 0) {
+          analysis.riskCategories = ["Communication Risk"]; 
+        }
       } else {
         // Standard text/image analysis
         analysis = await analyzeWithGemini(textContent, imageBase64);
@@ -540,10 +567,19 @@ export async function POST(request: NextRequest) {
             }
           }
         });
-        
-        // Add content-specific indicators
+          // Add content-specific indicators
         if (contentType === "Website" && !indicators.some(i => i.includes("website"))) {
           indicators.push("Suspicious website characteristics");
+        }
+        
+        // Add audio-specific indicators if we're processing audio content
+        if (contentType === "Audio" && audioBase64 && !indicators.some(i => i.includes("voice") || i.includes("audio"))) {
+          indicators.push("Voice communication analysis");
+          
+          // Add more specific indicators based on risk level
+          if (analysis.overallRiskProbability >= 50) {
+            indicators.push("Voice message manipulation tactics");
+          }
         }
         
         // Ensure we have at least one indicator for risky content
@@ -584,10 +620,9 @@ export async function POST(request: NextRequest) {
         riskSummary: riskSummary,
         indicators: getDisplayIndicators(),
         detectedRiskCategories: riskCategories,
-           
-        // Optional analysis fields
-        audioAnalysis: analysis.mainExplanation || analysis.audioAnalysis || null,
-        image_analysis: analysis.imageAnalysis || analysis.contentClassification?.contentExplanation || null,
+             // Optional analysis fields - ensure audio analysis is always provided if audio was submitted
+        audioAnalysis: audioBase64 ? (analysis.mainExplanation || analysis.audioAnalysis || "Audio content analyzed for potential risks and scam patterns.") : null,
+        image_analysis: imageBase64 ? (analysis.imageAnalysis || analysis.contentClassification?.contentExplanation || null) : null,
         
         // Additional contextual fields
         contentPurpose: analysis.contentClassification?.contentPurpose || null,

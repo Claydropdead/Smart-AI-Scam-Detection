@@ -31,13 +31,18 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     return false;
   };  // Initialize indicators for detection
   const indicators = getInitializedIndicators();
-
   // Combine ALL content for a single, unified analysis - text, image, and audio
+  const audioContent = analysisResult.audioAnalysis || "";
+  
+  // Make sure we give more weight to audio content by duplicating it multiple times if present
+  // This ensures audio analysis gets proper pattern matching even with limited text
+  const audioContentForAnalysis = audioContent ? `${audioContent} ${audioContent} ${audioContent}` : "";
+  
   const content = (
     (analysisResult.explanation || "") + " " +
     (scamContent || "") + " " +
     (analysisResult.image_analysis || "") + " " +
-    (analysisResult.audioAnalysis || "") // Audio analysis is just another content type
+    audioContentForAnalysis // Audio analysis with triple weight for better detection
   );
   
   // Run the SAME detection algorithm on all content
@@ -50,17 +55,22 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     apiPercent
   );
     // Get audio content for display purposes
-  const audioAnalysisContent = analysisResult.audioAnalysis;
-
-  // Determine if content contains high-risk indicators (using the same pattern detection for all content)
-  // This is only used for display purposes of audio-specific UI elements
+  const audioAnalysisContent = analysisResult.audioAnalysis;  // Determine if the content contains high-risk indicators (using the consolidated pattern detection)
+  // We now use a more comprehensive approach for audio analysis that considers any high-risk indicator
   const isAudioClearlyScam = !!(analysisResult.audioAnalysis && (
+    // Check if any detected pattern has high severity (4+)
+    Object.values(detectionResult.patternMatches).some(match => match.severity >= 4) ||
+    // Or check specific high-risk patterns commonly found in audio scams
+    detectionResult.patternMatches["Voice message scam"] ||
     detectionResult.patternMatches["Filipino investment scam"] ||
     detectionResult.patternMatches["Investment opportunity"] ||
     detectionResult.patternMatches["Remittance scam"] ||
     detectionResult.patternMatches["Payment upfront"] ||
     detectionResult.patternMatches["Financial information request"] ||
-    detectionResult.patternMatches["Too good to be true"]
+    detectionResult.patternMatches["Too good to be true"] ||
+    detectionResult.patternMatches["Emotional manipulation"] ||
+    // Audio content with urgent requests should be flagged
+    detectionResult.patternMatches["Urgent action required"]
   ));
   // Updated audio risk assessment based on detected indicators
   // Now we use the same detection logic for both text and audio
@@ -79,8 +89,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   
   // Get UI styles based on calculated risk percentage to ensure consistency
   const statusStyles = getColorByPercentage(finalRiskPercentage);
-
-  // Prepare display explanation, using audio analysis if main explanation is missing and audio indicates scam
+  // Prepare display explanation, prioritizing proper integration of audio analysis
   let displayExplanation = analysisResult.explanation;
   const genericEnglishFallbacks = [
     "no detailed risk analysis available", 
@@ -88,14 +97,30 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     "explanation not available" 
   ];
   const isEnglishExplanationGeneric = !displayExplanation || 
-    genericEnglishFallbacks.some(fallback => displayExplanation.toLowerCase().includes(fallback));
-
-  if (isEnglishExplanationGeneric && isAudioClearlyScam && audioAnalysisContent) {
-    displayExplanation = `The voice recording analysis strongly indicates a scam. Details from audio analysis: \"${audioAnalysisContent}\"`;
+    genericEnglishFallbacks.some(fallback => displayExplanation?.toLowerCase().includes(fallback));
+  // If we have audio analysis but generic text explanation, use audio analysis as the primary explanation
+  if (audioAnalysisContent) {
+    if (isEnglishExplanationGeneric) {
+      // Replace with audio analysis completely with clear header
+      displayExplanation = `Voice Recording Analysis: ${audioAnalysisContent}`;
+      
+      // If there are detected scam indicators, enhance the explanation
+      if (Object.entries(indicators).filter(([_, data]) => data.detected).length > 0) {
+        const detectedPatterns = Object.entries(indicators)
+          .filter(([_, data]) => data.detected)
+          .map(([name, _]) => name)
+          .slice(0, 3)
+          .join(", ");
+        
+        displayExplanation += `\n\nThe voice recording contains suspicious patterns including: ${detectedPatterns}.`;
+      }
+    } else if (displayExplanation) {
+      // Append audio analysis to existing explanation for completeness
+      displayExplanation = `${displayExplanation}\n\nAdditional Voice Analysis: ${audioAnalysisContent}`;
+    }
   } else if (!displayExplanation) { 
     displayExplanation = "No English explanation available."; 
   }
-
   // Prepare display explanation for Tagalog
   let displayExplanationTagalog = analysisResult.explanationTagalog;
   const genericTagalogFallbacks = [
@@ -104,10 +129,37 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     "walang available na paliwanag"
   ];
   const isTagalogExplanationGeneric = !displayExplanationTagalog ||
-    genericTagalogFallbacks.some(fallback => displayExplanationTagalog.toLowerCase().includes(fallback));
-
-  if (isTagalogExplanationGeneric && isAudioClearlyScam && audioAnalysisContent) {
-    displayExplanationTagalog = `Babala: Ang audio na ito ay malinaw na nagpapahiwatig ng scam. Detalye mula sa pagsusuri ng audio: \"${audioAnalysisContent}\"`;
+    genericTagalogFallbacks.some(fallback => displayExplanationTagalog?.toLowerCase().includes(fallback));
+  // If we have audio analysis but generic Tagalog explanation, use audio analysis info
+  if (audioAnalysisContent) {
+    if (isTagalogExplanationGeneric) {
+      // Replace with audio analysis for Tagalog with clear header
+      displayExplanationTagalog = `Pagsusuri ng Voice Recording: ${audioAnalysisContent}`;
+      
+      // If there are detected scam indicators, enhance the Tagalog explanation
+      if (Object.entries(indicators).filter(([_, data]) => data.detected).length > 0) {
+        const detectedPatterns = Object.entries(indicators)
+          .filter(([_, data]) => data.detected)
+          .map(([name, _]) => {
+            // Simple translation of common indicator names (just basic examples)
+            switch(name) {
+              case "Urgent action required": return "Kailangang-kailangan daw na aksyunan agad";
+              case "Financial information request": return "Hiling ng impormasyon tungkol sa pananalapi";
+              case "Too good to be true": return "Napakagandang alok na hindi kapani-paniwala";
+              case "Voice message scam": return "Panloloko gamit ang voice message";
+              case "Filipino investment scam": return "Panloloko sa pamumuhunan";
+              default: return name; // Keep English if no translation
+            }
+          })
+          .slice(0, 3)
+          .join(", ");
+        
+        displayExplanationTagalog += `\n\nAng voice recording ay naglalaman ng kahina-hinalang mga pattern gaya ng: ${detectedPatterns}.`;
+      }
+    } else if (displayExplanationTagalog) {
+      // Append audio analysis to existing Tagalog explanation
+      displayExplanationTagalog = `${displayExplanationTagalog}\n\nKaragdagang Pagsusuri ng Audio: ${audioAnalysisContent}`;
+    }
   } else if (!displayExplanationTagalog) {
     displayExplanationTagalog = "Hindi available ang paliwanag sa Tagalog.";
   }
@@ -307,12 +359,11 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           if (finalRiskPercentage >= 50) return "Questionable Health Information";
           if (finalRiskPercentage >= 25) return "Health Content Requiring Verification";
           return "General Health Information";
-          
-        case "audio": // General audio category, if not overridden by specific scam detection
-          if (finalRiskPercentage >= 75) return "Audio With Critical Security Risks";
-          if (finalRiskPercentage >= 50) return "Audio With Significant Security Concerns";
-          if (finalRiskPercentage >= 25) return "Audio With Moderate Security Concerns";
-          return "Standard Audio Content";
+          case "audio": // General audio category, if not overridden by specific scam detection
+          if (finalRiskPercentage >= 75) return "Voice Recording With Critical Security Risks";
+          if (finalRiskPercentage >= 50) return "Voice Recording With Significant Concerns";
+          if (finalRiskPercentage >= 25) return "Voice Recording With Moderate Concerns";
+          return "Normal Voice Recording";
           
         case "website":
           if (finalRiskPercentage >= 75) return "Website With Critical Security Risks";
