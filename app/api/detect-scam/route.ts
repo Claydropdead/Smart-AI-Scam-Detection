@@ -488,12 +488,11 @@ export async function POST(request: NextRequest) {
           return "Slightly Suspicious";
         }
         return "Likely Not a Scam";
-      };
-
-      // Generate display status based on content type and risk level
+      };      // Generate display status based on content type and risk level
       const getDisplayStatus = (contentType: string, overallRiskLevel: string): string => {
-        const contentPrefix = contentType ? `${contentType}: ` : "";
-        return `${contentPrefix}${overallRiskLevel} Risk Detected`;
+        // Don't include the risk level in the title - this will be shown by the risk percentage display
+        const contentPrefix = contentType ? `${contentType} Analysis` : "Analysis Results";
+        return contentPrefix;
       };
       
       // Extract content type from analysis

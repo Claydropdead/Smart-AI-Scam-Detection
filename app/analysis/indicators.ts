@@ -45,9 +45,8 @@ export const commonIndicators: CommonIndicators = {
     patterns: ["prize", "winner", "won", "lottery", "gift", "free", "million", "reward", "claim your", "bonus", "cash prize", "jackpot", "congratulations", "lucky winner", "lump sum", "special offer", "exclusive deal", "unclaimed", "inheritance", "big money"],
     severity: 4,
     detected: false
-  },
-  "Investment opportunity": {
-    patterns: ["investment", "high return", "guaranteed profit", "double your", "crypto", "bitcoin", "multiply your money", "passive income", "get rich", "financial freedom", "trading opportunity", "trading bot", "trading platform", "investment scheme", "high yield", "risk-free", "forex", "stock investment"],
+  },  "Investment opportunity": {
+    patterns: ["investment", "high return", "guaranteed profit", "double your", "crypto", "bitcoin", "multiply your money", "passive income", "get rich", "financial freedom", "trading opportunity", "trading bot", "trading platform", "investment scheme", "high yield", "risk-free", "forex", "stock investment", "guaranteed earnings", "limited slot", "limited slots", "may slot", "may slots", "walang risk", "no risk", "fully insured", "may promo", "puhunan", "earnings up to", "weekly earnings", "daily earnings", "trading", "futurew", "futurewealth", "future wealth"],
     severity: 4,
     detected: false
   },
@@ -161,10 +160,14 @@ export const commonIndicators: CommonIndicators = {
     patterns: ["loan", "utang", "pautang", "low interest", "easy loan", "fast cash", "quick loan", "no collateral", "lending", "credit", "financing", "5-6", "sangla", "pawn", "approve", "disbursement", "cash loan"],
     severity: 4,
     detected: false
-  },
-  "Text and call scam": {
+  },  "Text and call scam": {
     patterns: ["sim", "text", "message", "call", "globe", "smart", "dito", "tm", "sun", "tnt", "load", "promo", "data", "points", "rewards", "winner", "subscriber", "subscriber"],
     severity: 3,
+    detected: false
+  },
+  "Filipino investment scam": {
+    patterns: ["gusto niyo po bang sumali", "sumali habang may promo", "gusto mo bang kumita", "kumita ng pera", "puhunan", "guaranteed earnings", "walang risk", "fully insured", "limited slot", "limited slots", "may slot", "may slots", "trading", "futurew", "futurewealth", "habang may promo", "weekly kahit", "kahit maliit", "kahit konti", "kahit", "lang ang puhunan", "lang puhunan", "kikitain mo", "kikita ka"],
+    severity: 5,
     detected: false
   }
 };
@@ -180,7 +183,7 @@ export function getInitializedIndicators(): CommonIndicators {
 
 /**
  * Process content to detect scam indicators
- * @param content - The text content to analyze
+ * @param content - The content to analyze (can be text, image analysis text, or audio transcription)
  * @param indicatorsObj - The indicators object to update
  * @returns Object with detection results
  */
@@ -244,10 +247,10 @@ export function detectIndicators(content: string, indicatorsObj: CommonIndicator
 
 /**
  * Calculate risk percentage based on detected indicators
- * @param analysisResult - The analysis result from the API
- * @param detectionResult - The result of indicator detection
+ * @param patternMatches - The detected pattern matches
+ * @param detectionResult - The result of indicator detection from all content types
  * @param apiPercent - The percentage from the API
- * @returns Calculated risk percentage
+ * @returns Calculated risk percentage that works for all content types (text, image, audio)
  */
 export function calculateRiskPercentage(
   patternMatches: Record<string, IndicatorMatch>,

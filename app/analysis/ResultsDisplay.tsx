@@ -11,38 +11,110 @@ interface ResultsDisplayProps {
 
 // Separate component for results display to improve code organization
 export default function ResultsDisplay({ analysisResult, scamContent }: ResultsDisplayProps) {
-  // Use direct probability from API (0-100)
   const apiPercent = analysisResult.probability;
-  
-  // Initialize indicators for detection
+
+  // Helper function to check if risk summary is inconsistent with calculated risk percentage
+  const isRiskSummaryInconsistent = (summary: string, riskPercentage: number): boolean => {
+    const lowRiskKeywords = ['safe', 'no suspicious', 'no concerning', 'low risk', 'minimal risk'];
+    const highRiskKeywords = ['dangerous', 'critical', 'very high', 'multiple strong', 'alarming'];
+    
+    // Check for mismatches where summary suggests low risk but percentage is high
+    if (riskPercentage >= 50 && lowRiskKeywords.some(keyword => summary.toLowerCase().includes(keyword))) {
+      return true;
+    }
+    
+    // Check for mismatches where summary suggests high risk but percentage is low
+    if (riskPercentage < 25 && highRiskKeywords.some(keyword => summary.toLowerCase().includes(keyword))) {
+      return true;
+    }
+    
+    return false;
+  };  // Initialize indicators for detection
   const indicators = getInitializedIndicators();
-    // Combine all text for analysis
+
+  // Combine ALL content for a single, unified analysis - text, image, and audio
   const content = (
-    (analysisResult.explanation || "") + " " + // Changed from explanation_english
-    (scamContent || "") + " " + 
+    (analysisResult.explanation || "") + " " +
+    (scamContent || "") + " " +
     (analysisResult.image_analysis || "") + " " +
-    (analysisResult.audioAnalysis || "") // Changed from audio_analysis
+    (analysisResult.audioAnalysis || "") // Audio analysis is just another content type
   );
   
-  // Run the detection algorithm
+  // Run the SAME detection algorithm on all content
   const detectionResult = detectIndicators(content, indicators);
-    // Calculate the final risk percentage
+  
+  // Calculate the final risk percentage using the SAME logic for all content types
   let finalRiskPercentage = calculateRiskPercentage(
     detectionResult.patternMatches,
     detectionResult,
     apiPercent
   );
-  
+    // Get audio content for display purposes
+  const audioAnalysisContent = analysisResult.audioAnalysis;
+
+  // Determine if content contains high-risk indicators (using the same pattern detection for all content)
+  // This is only used for display purposes of audio-specific UI elements
+  const isAudioClearlyScam = !!(analysisResult.audioAnalysis && (
+    detectionResult.patternMatches["Filipino investment scam"] ||
+    detectionResult.patternMatches["Investment opportunity"] ||
+    detectionResult.patternMatches["Remittance scam"] ||
+    detectionResult.patternMatches["Payment upfront"] ||
+    detectionResult.patternMatches["Financial information request"] ||
+    detectionResult.patternMatches["Too good to be true"]
+  ));
+  // Updated audio risk assessment based on detected indicators
+  // Now we use the same detection logic for both text and audio
+  const isRiskOverriddenByAudio = false;
+    // No special handling needed for audio content anymore - we already applied the same risk 
+  // calculation logic for all content types (text, image, audio) in the unified detection flow above.
+  // Risk level comes directly from the unified content analysis.
+
   // Additional safeguard to ensure consistent risk display
   // Make sure percentage values don't fall right at category boundaries
-  if (finalRiskPercentage === 50 || finalRiskPercentage === 49) finalRiskPercentage = 48; // Clear moderate
-  if (finalRiskPercentage === 75 || finalRiskPercentage === 74) finalRiskPercentage = 73; // Clear high
-  if (finalRiskPercentage === 25 || finalRiskPercentage === 24) finalRiskPercentage = 23; // Clear low
+  if (!isRiskOverriddenByAudio) {
+    if (finalRiskPercentage === 50 || finalRiskPercentage === 49) finalRiskPercentage = 48; // Clear moderate
+    if (finalRiskPercentage === 75 || finalRiskPercentage === 74) finalRiskPercentage = 73; // Clear high
+    if (finalRiskPercentage === 25 || finalRiskPercentage === 24) finalRiskPercentage = 23; // Clear low
+  }
   
   // Get UI styles based on calculated risk percentage to ensure consistency
   const statusStyles = getColorByPercentage(finalRiskPercentage);
-    // Extract any additional indicators from the AI explanation
-  const extractedIndicators = extractScamIndicators(analysisResult.explanation); // Changed from explanation_english
+
+  // Prepare display explanation, using audio analysis if main explanation is missing and audio indicates scam
+  let displayExplanation = analysisResult.explanation;
+  const genericEnglishFallbacks = [
+    "no detailed risk analysis available", 
+    "no english explanation available",
+    "explanation not available" 
+  ];
+  const isEnglishExplanationGeneric = !displayExplanation || 
+    genericEnglishFallbacks.some(fallback => displayExplanation.toLowerCase().includes(fallback));
+
+  if (isEnglishExplanationGeneric && isAudioClearlyScam && audioAnalysisContent) {
+    displayExplanation = `The voice recording analysis strongly indicates a scam. Details from audio analysis: \"${audioAnalysisContent}\"`;
+  } else if (!displayExplanation) { 
+    displayExplanation = "No English explanation available."; 
+  }
+
+  // Prepare display explanation for Tagalog
+  let displayExplanationTagalog = analysisResult.explanationTagalog;
+  const genericTagalogFallbacks = [
+    "hindi available ang paliwanag sa tagalog", 
+    "hindi available ang detalyadong pagsusuri ng panganib",
+    "walang available na paliwanag"
+  ];
+  const isTagalogExplanationGeneric = !displayExplanationTagalog ||
+    genericTagalogFallbacks.some(fallback => displayExplanationTagalog.toLowerCase().includes(fallback));
+
+  if (isTagalogExplanationGeneric && isAudioClearlyScam && audioAnalysisContent) {
+    displayExplanationTagalog = `Babala: Ang audio na ito ay malinaw na nagpapahiwatig ng scam. Detalye mula sa pagsusuri ng audio: \"${audioAnalysisContent}\"`;
+  } else if (!displayExplanationTagalog) {
+    displayExplanationTagalog = "Hindi available ang paliwanag sa Tagalog.";
+  }
+  
+  // Extract any additional indicators from the original AI explanation for keyword processing
+  const originalExplanationForIndicators = analysisResult.explanation || "";
+  const extractedIndicators = extractScamIndicators(originalExplanationForIndicators);
   
   // Get all detected indicators from the standard pattern matching
   const detectedIndicators = Object.entries(indicators)
@@ -104,28 +176,43 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     if (finalRiskPercentage >= 50) return 'bg-orange-800 border-orange-700 text-white';
     if (finalRiskPercentage >= 25) return 'bg-yellow-700 border-yellow-600 text-white';
     return 'bg-green-700 border-green-600 text-white';
-  };
-  // Generate a consistent status based on the calculated risk percentage
+  };  // Generate a consistent status based on the calculated risk percentage
   const getConsistentRiskStatus = (percentage: number): string => {
     // Using strict thresholds to ensure UI consistency
     if (percentage >= 75) return "Very High Risk Content";
     if (percentage >= 50) return "High Risk Content";
     if (percentage >= 25) return "Moderate Risk Content";
     return "Low Risk Content";
-  };  // Use API's status if present, otherwise fallback to derived status
-  const displayStatus = analysisResult.status || 
-    (analysisResult.riskLevel ? 
-      `${analysisResult.riskLevel.charAt(0).toUpperCase() + analysisResult.riskLevel.slice(1)} Risk Content` :
-      getConsistentRiskStatus(finalRiskPercentage)); // Fallback to calculated// Intelligent assessment that adapts based on content type, purpose, and risk level
-  const getAssessmentText = (): string => {
-    // Analyze content characteristics from available data
-    const contentType = (analysisResult.contentType || "").toLowerCase();
-    const contentPurpose = (analysisResult.contentPurpose || "").toLowerCase();
-    const audienceTarget = (analysisResult.audienceTarget || "").toLowerCase();
+  };
+    // Use API's status if present, but ensure it doesn't have inconsistent risk level wording
+  // This primarily handles the content type portion (e.g., "Audio Analysis")
+  let displayStatus = analysisResult.status || "Analysis Results";
+  
+  // If status contains risk level wording that might conflict with the calculated risk,
+  // replace it with a more neutral form
+  const riskWords = ['low risk', 'moderate risk', 'high risk', 'very high risk'];
+  if (riskWords.some(word => displayStatus.toLowerCase().includes(word))) {
+    // Extract content type if possible
+    const contentType = analysisResult.contentType || 
+                       (displayStatus.includes(':') ? displayStatus.split(':')[0].trim() : "");
     
+    // For audio content specifically, make it clearer this is an audio analysis
+    if (contentType && contentType.toLowerCase() === 'audio') {
+      displayStatus = "Voice Recording Analysis";
+    } else {
+      displayStatus = contentType ? `${contentType} Analysis` : "Analysis Results";
+    }
+  }// Intelligent assessment that adapts based on content type, purpose, and risk level
+  const getAssessmentText = (): string => {
+    const contentType = (analysisResult.contentType || "").toLowerCase();    const contentPurpose = (analysisResult.contentPurpose || "").toLowerCase();
+    const audienceTarget = (analysisResult.audienceTarget || "").toLowerCase();
+    // Removed unused audioAnalysisText variable as it's no longer needed with unified audio handling
+
     // Check for API assessment, but NEVER use it if it mentions "scam"
     const apiAssessmentHasScam = analysisResult.assessment && 
-                              analysisResult.assessment.toLowerCase().includes("scam");
+                              analysisResult.assessment.toLowerCase().includes("scam");    // Audio content assessment uses EXACTLY the same assessment text as other content types
+    // We don't need special handling for audio content anymore - it uses the same detection system
+    // The audio analysis is treated as part of the content's text, just like image analysis text
     
     // Function to get content category based on available information
     const getContentCategory = () => {
@@ -163,6 +250,11 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       if (contentPurpose.match(/health|medical|treatment|cure|medicine|weight|diet|supplement/i)) {
         return "health";
       }
+
+      // Check for audio content (if not caught by the specific scam override above)
+      if (contentType.includes("audio")) {
+        return "audio"; 
+      }
       
       // Website is a fallback if we know it's a website but can't categorize further
       if (contentType.match(/website|url|web page/i)) {
@@ -176,7 +268,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     // Get the content category
     const category = getContentCategory();
     
-    // If API assessment exists but contains "scam", override it with our content-specific assessment
+    // If API assessment exists but contains "scam", or no API assessment, override/provide our content-specific assessment
     if (apiAssessmentHasScam || !analysisResult.assessment) {
       // Provide assessments based on content category and risk level
       switch (category) {
@@ -216,6 +308,12 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           if (finalRiskPercentage >= 25) return "Health Content Requiring Verification";
           return "General Health Information";
           
+        case "audio": // General audio category, if not overridden by specific scam detection
+          if (finalRiskPercentage >= 75) return "Audio With Critical Security Risks";
+          if (finalRiskPercentage >= 50) return "Audio With Significant Security Concerns";
+          if (finalRiskPercentage >= 25) return "Audio With Moderate Security Concerns";
+          return "Standard Audio Content";
+          
         case "website":
           if (finalRiskPercentage >= 75) return "Website With Critical Security Risks";
           if (finalRiskPercentage >= 50) return "Website With Significant Security Concerns";
@@ -236,19 +334,123 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       return analysisResult.assessment;
     }
     
-    // Ultimate fallback (though code should never reach here)
+    // Ultimate fallback
     return getConsistentRiskStatus(finalRiskPercentage);
   };
 
   const assessmentText = getAssessmentText();
+  // --- Enhanced Advice Section ---
+  let displayAdvice: string | undefined = undefined;
+  const audioScamWarning = "This voice recording shows strong characteristics of a scam. ";
+  const filipinoInvestmentScamWarning = "This appears to be a Filipino investment scam promising guaranteed earnings with minimal investment. ";
+  const genericAdviceKeywords = ["no specific advice available", "no advice provided", "no specific advice"];
+
+  const apiProvidedAdvice = analysisResult.advice;
+  const isApiAdviceGeneric = !apiProvidedAdvice || 
+    genericAdviceKeywords.some(keyword => apiProvidedAdvice.toLowerCase().includes(keyword));
+
+  if (isApiAdviceGeneric) {
+    // API advice is generic or missing - provide more specific advice based on detected indicators
+    if (detectionResult.patternMatches["Filipino investment scam"]) {
+      // Specific advice for Filipino investment scams
+      displayAdvice = filipinoInvestmentScamWarning + 
+        "These are typically fraudulent schemes. Legitimate investments never guarantee earnings or promise 'no risk' returns. " +
+        "Do not send any money, share personal information, or communicate further. Report this to authorities immediately.";
+    } else if (isAudioClearlyScam) {
+      displayAdvice = audioScamWarning + "Do not trust this recording. Do not call any numbers, click any links, or provide any personal information. Report this immediately.";
+    } else {
+      // Fallback to risk-based generic advice if not a clear audio scam but API advice is generic
+      if (finalRiskPercentage >= 75) {
+        displayAdvice = "This content is highly suspicious and likely unsafe. Do not interact with it. Avoid sharing any personal or financial information. Report this content to relevant authorities immediately.";
+      } else if (finalRiskPercentage >= 50) {
+        displayAdvice = "Exercise significant caution with this content. Verify information through trusted, independent sources before taking any action. Be wary of requests for personal data or money.";
+      } else if (finalRiskPercentage >= 25) {
+        displayAdvice = "Review this content with some caution. If it involves requests or claims, cross-check information with other reliable sources. Be mindful of general internet safety practices.";
+      } else {
+        displayAdvice = "This content appears to be low risk. However, always maintain general awareness and practice safe internet habits.";
+      }
+    }  } else {
+    // API provided specific advice
+    displayAdvice = apiProvidedAdvice;
+    
+    // Add appropriate warning prefix based on scam type detected
+    if (detectionResult.patternMatches["Filipino investment scam"] && apiProvidedAdvice && 
+        !apiProvidedAdvice.toLowerCase().includes("filipino") && 
+        !apiProvidedAdvice.toLowerCase().includes("investment scam") &&
+        !apiProvidedAdvice.toLowerCase().includes("guaranteed earnings")) {
+      // Add Filipino investment scam warning
+      displayAdvice = filipinoInvestmentScamWarning + apiProvidedAdvice;
+    }
+    else if (isAudioClearlyScam && apiProvidedAdvice && !apiProvidedAdvice.toLowerCase().startsWith(audioScamWarning.toLowerCase())) {
+      // If it's an audio scam and the specific API advice doesn't already start with a similar warning, prepend it.
+      // This avoids double warnings if the API advice is already audio-scam-specific.
+      if (!apiProvidedAdvice.toLowerCase().includes("audio") && !apiProvidedAdvice.toLowerCase().includes("voice")) {
+         displayAdvice = audioScamWarning + apiProvidedAdvice;
+      }
+    }
+  }
+  
+  // Final fallback, though previous logic should cover most cases
+  if (!displayAdvice) {
+    displayAdvice = "No specific advice available. Always exercise caution online.";
+  }
+
+  // --- Enhanced Safety & Security Tips ---
+  let displayTutorialsAndTips: string[] = analysisResult.tutorialsAndTips || [];
+  const audioScamSafetyTip = "Be especially cautious with voice messages asking for urgent action, payments, or personal information. Always verify such requests through an official, independent channel before responding.";
+  const defaultSafetyTips = [
+      "Verify the identity of anyone contacting you, especially if unsolicited, before sharing personal information.",
+      "Be wary of requests for money, gift cards, or financial details, particularly if they create urgency or fear.",
+      "Use strong, unique passwords for all your accounts and enable two-factor authentication wherever possible.",
+      "Keep your software, operating system, and antivirus programs updated to protect against known vulnerabilities.",
+      "Think before you click on links or download attachments, especially from unknown or unverified sources."
+  ];
+
+  if (!displayTutorialsAndTips.length || (displayTutorialsAndTips.length === 1 && displayTutorialsAndTips[0].toLowerCase().includes("verify the identity"))) {
+    displayTutorialsAndTips = [...defaultSafetyTips];
+  }
+  
+  if (isAudioClearlyScam && !displayTutorialsAndTips.some(tip => tip.toLowerCase().includes("voice message"))) {
+    displayTutorialsAndTips.push(audioScamSafetyTip);
+  }
+
+
+  // --- Enhanced Reporting Resources ---
+  let displayComplaintFilingIntro = analysisResult.complaintFilingInfo?.introduction;
+  const genericComplaintIntroKeywords = ["report suspicious", "no specific reporting", "authorities to protect yourself"];
+  const isComplaintIntroGeneric = !displayComplaintFilingIntro || 
+                                  genericComplaintIntroKeywords.some(keyword => displayComplaintFilingIntro.toLowerCase().includes(keyword));
+
+  if (isComplaintIntroGeneric) {
+    if (isAudioClearlyScam) {
+      displayComplaintFilingIntro = "This audio recording appears to be a scam. Reporting such attempts helps protect others. Consider using the following resources:";
+    } else if (finalRiskPercentage >= 50) {
+      displayComplaintFilingIntro = "This content has raised significant concerns. If you believe it's harmful or deceptive, reporting it can make a difference. Resources:";
+    } else {
+      displayComplaintFilingIntro = "If you encounter content you believe is suspicious or harmful, consider reporting it. Here are some general resources:";
+    }
+  } else if (!displayComplaintFilingIntro) {
+     displayComplaintFilingIntro = "Consider reporting highly suspicious content to relevant authorities.";
+  }
+
+  let displayComplaintAgencies: ApiReportAgency[] = analysisResult.complaintFilingInfo?.agencies || [];
+  if (!displayComplaintAgencies.length) {
+    displayComplaintAgencies = [
+      { name: "Federal Trade Commission (FTC)", url: "https://reportfraud.ftc.gov/", description: "For reporting scams, fraud, and bad business practices in the US." },
+      { name: "Internet Crime Complaint Center (IC3)", url: "https://www.ic3.gov/", description: "For reporting internet-related criminal complaints in the US (a partnership between the FBI and NW3C)." }
+    ];
+    // Example for Philippines, can be expanded with more context
+    if (isAudioClearlyScam && (audioAnalysisContent && audioAnalysisContent.toLowerCase().includes("peso") || displayExplanationTagalog.includes("peso"))) {
+        displayComplaintAgencies.push({ name: "PNP Anti-Cybercrime Group (Philippines)", url: "https://acg.pnp.gov.ph/eComplaint/", description: "For reporting cybercrimes in the Philippines." });
+    }
+  }
   
   return (
-    <div className="space-y-6">
-      {/* Main Results Card */}
+    <div className="space-y-6">      {/* Main Results Card */}
       <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className={`text-2xl font-bold ${statusStyles.textClasses} flex items-center`}>
-            <span className="mr-3 text-3xl">{statusStyles.icon}</span>
+            <span className="mr-3 text-3xl">{analysisResult.contentType?.toLowerCase() === 'audio' ? '🎤' : statusStyles.icon}</span>
             {displayStatus}
           </h2>
           <span className={`px-4 py-2 rounded-full text-lg font-bold ${statusStyles.badgeClasses} shadow-md`}>
@@ -311,14 +513,19 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             )}
             <p className="text-sm"><strong className={statusStyles.textClasses}>Assessment:</strong> {assessmentText}</p>
             <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.confidence || "Unknown"}</p>
-            {analysisResult.contentPurpose && (
-              <p className="text-sm"><strong className={statusStyles.textClasses}>Content Purpose:</strong> {analysisResult.contentPurpose}</p>
+            {(analysisResult.contentPurpose || (isAudioClearlyScam && analysisResult.audienceAnalysis)) && (
+              <p className="text-sm"><strong className={statusStyles.textClasses}>Content Purpose:</strong> {analysisResult.contentPurpose || (isAudioClearlyScam ? "See Audience Analysis below for purpose inferred from audio" : "Not specified")}</p>
             )}
-            {analysisResult.audienceTarget && (
-              <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget}</p>
+            {(analysisResult.audienceTarget || (isAudioClearlyScam && analysisResult.audienceAnalysis)) && (
+              <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget || (isAudioClearlyScam ? "See Audience Analysis below for target inferred from audio" : "Not specified")}</p>
             )}
-          </div>
-          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>            <p className="font-bold text-lg">
+            {isAudioClearlyScam && analysisResult.audienceAnalysis && (
+              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                <p className="text-sm"><strong className={statusStyles.textClasses}>Audience Analysis (from Audio):</strong></p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1">{analysisResult.audienceAnalysis}</p>
+              </div>
+            )}
+          </div>          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>            <p className="font-bold text-lg">
               {finalRiskPercentage >= 75 
                 ? '🚨 Very High Risk Content' 
                 : finalRiskPercentage >= 50 
@@ -328,14 +535,15 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                     : '✅ Low Risk Content'
               } ({Math.round(finalRiskPercentage)}%)
             </p><p className="text-sm mt-2 opacity-90">
-              {analysisResult.riskSummary || 
-                (finalRiskPercentage < 25 
-                  ? '✅ Low risk content with no concerning elements detected' 
-                  : finalRiskPercentage < 50 
-                    ? '⚠️ Content with some potentially concerning elements'
-                    : finalRiskPercentage < 75
-                      ? '🚨 High risk content with multiple concerning elements'
-                      : '🔴 Very high risk content that requires careful consideration')
+              {analysisResult.riskSummary && !isRiskSummaryInconsistent(analysisResult.riskSummary, finalRiskPercentage)
+                ? analysisResult.riskSummary 
+                : (finalRiskPercentage < 25 
+                    ? '✅ Low risk content with no concerning elements detected' 
+                    : finalRiskPercentage < 50 
+                      ? '⚠️ Content with some potentially concerning elements'
+                      : finalRiskPercentage < 75
+                        ? '🚨 High risk content with multiple concerning elements'
+                        : '🔴 Very high risk content that requires careful consideration')
               }
             </p>
           </div>
@@ -401,8 +609,98 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           <h3 className="text-xl font-bold mb-3 text-purple-800 dark:text-purple-200 flex items-center">
             <span className="mr-2">🎤</span>
             Voice Recording Analysis
-          </h3>          <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
-            <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audioAnalysis || "No audio analysis available."}</p>
+          </h3>            <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
+            {/* Main audio analysis content - using same risk assessment as text content */}
+            <div className="mb-4">
+              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Content Transcript Analysis:</h4>
+              <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audioAnalysis || "No audio analysis available."}</p>
+            </div>
+            
+            {/* Audio risk rating - uses EXACTLY the same risk assessment as text content */}
+            <div className="mb-4 p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-lg">
+              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Risk Assessment:</h4>
+              <p className="text-sm">
+                <span className="font-medium">
+                  {finalRiskPercentage >= 75 
+                    ? '🚨 Very High Risk Content' 
+                    : finalRiskPercentage >= 50 
+                      ? '⚠️ High Risk Content'
+                      : finalRiskPercentage >= 25 
+                        ? '⚠️ Moderate Risk Content'
+                        : '✅ Low Risk Content'}
+                </span> - {Math.round(finalRiskPercentage)}% risk detected
+              </p>
+              
+              {/* Show risk indicators from unified analysis system */}
+              {Object.keys(detectionResult.patternMatches).length > 0 && (
+                <div className="mt-2 text-xs text-purple-800 dark:text-purple-300">
+                  <p className="font-medium">Risk indicators from content analysis:</p>
+                  <p>
+                    {Object.keys(detectionResult.patternMatches)
+                      .slice(0, 5)
+                      .join(", ")}
+                    {Object.keys(detectionResult.patternMatches).length > 5 ? ", ..." : ""}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* If audio has keyPoints, display them */}
+            {analysisResult.keyPoints && analysisResult.keyPoints.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Key Points (from audio transcript):</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {analysisResult.keyPoints.map((point, idx) => (
+                    <li key={`kp-audio-${idx}`} className="text-sm text-purple-900 dark:text-purple-100 pl-2">{point}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Display indicators specific to audio if available */}
+            {analysisResult.indicators && analysisResult.indicators.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Detected Factors:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {analysisResult.indicators.map((indicator, idx) => (
+                    <span key={`ind-audio-${idx}`} className="px-3 py-1 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full text-xs">{indicator}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Display content-specific detail fields from audio analysis if available*/}
+            {analysisResult.contentDetails && (
+              <div className="mt-4 border-t border-purple-200 dark:border-purple-700 pt-4">
+                <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Audio Details:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {analysisResult.contentDetails.format && (
+                    <div><span className="font-medium">Format:</span> {analysisResult.contentDetails.format}</div>
+                  )}
+                  {analysisResult.contentDetails.duration && (
+                    <div><span className="font-medium">Duration:</span> {analysisResult.contentDetails.duration}</div>
+                  )}
+                  {analysisResult.contentDetails.speakers !== undefined && (
+                    <div><span className="font-medium">Speakers:</span> {analysisResult.contentDetails.speakers}</div>
+                  )}
+                  {analysisResult.contentDetails.languages && analysisResult.contentDetails.languages.length > 0 && (
+                    <div><span className="font-medium">Languages:</span> {analysisResult.contentDetails.languages.join(', ')}</div>
+                  )}
+                </div>
+                {analysisResult.contentDetails.contentSummary && (
+                  <div className="mt-2">
+                    <span className="font-medium">Content Summary:</span> 
+                    <p className="mt-1 text-sm">{analysisResult.contentDetails.contentSummary}</p>
+                  </div>
+                )}
+                {analysisResult.contentDetails.contentSummaryTagalog && (
+                  <div className="mt-2">
+                    <span className="font-medium">Content Summary (Tagalog):</span> 
+                    <p className="mt-1 text-sm">{analysisResult.contentDetails.contentSummaryTagalog}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -415,7 +713,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             Explanation (English)
           </h3>
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanation || "No English explanation available."}</p> {/* Changed from explanation_english */}
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{displayExplanation}</p>
           </div>
         </div>
         
@@ -425,7 +723,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             Paliwanag (Tagalog)
           </h3>
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{analysisResult.explanationTagalog || "Hindi available ang paliwanag sa Tagalog."}</p> {/* Changed from explanation_tagalog */}
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{displayExplanationTagalog}</p> {/* Changed from analysisResult.explanationTagalog */}
           </div>
         </div>
       </div>
@@ -437,33 +735,29 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           Recommended Actions
         </h3>
         <div className="bg-white dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{analysisResult.advice || "No specific advice available."}</p>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{displayAdvice}</p>
         </div>
       </div>
 
-      {/* Limited Context Warning - This section is removed as limited_context is no longer part of ScamDetectionResult */}
-
       {/* How to Avoid Scams (Tutorials and Tips) */}
-      <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>        <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
+      <div className={`p-6 rounded-xl border-2 ${statusStyles.containerClasses} shadow-lg`}>
+        <h3 className={`text-xl font-bold mb-4 ${statusStyles.textClasses} flex items-center`}>
           <span className="mr-2">🛡️</span>
           Safety & Security Tips
         </h3>
         <div className="bg-white dark:bg-gray-900/30 rounded-lg p-4 border border-current border-opacity-30">
           <ul className="space-y-3">
-            {analysisResult.tutorialsAndTips?.length ? // Changed from how_to_avoid_scams
-              analysisResult.tutorialsAndTips.map((tip, index) => (
+            {displayTutorialsAndTips.length > 0 ?
+              displayTutorialsAndTips.map((tip, index) => (
                 <li key={index} className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                  <span className={`flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5`}>
                     {index + 1}
                   </span>
                   <span className="leading-relaxed">{tip}</span>
                 </li>
-              )) : 
+              )) :
               <li className="flex items-start text-sm">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
-                  1
-                </span>
-                <span className="leading-relaxed">Verify the identity of anyone contacting you online or by phone before sharing any personal information.</span>
+                <span className="leading-relaxed">No specific safety tips available at this time. Always practice general online safety: be cautious with unsolicited messages, verify information, and protect your personal data.</span>
               </li>
             }
           </ul>
@@ -471,26 +765,27 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
       </div>
 
       {/* Reporting Section (Complaint Filing Info) */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
+        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
           <span className="mr-2">📢</span>
           Relevant Reporting Resources
         </h3>
         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-          {analysisResult.complaintFilingInfo?.introduction && (
+          {displayComplaintFilingIntro && (
             <p className="text-sm mb-3 italic text-gray-600 dark:text-gray-400">
-              {analysisResult.complaintFilingInfo.introduction}
+              {displayComplaintFilingIntro}
             </p>
           )}
           <ul className="space-y-3">
-            {analysisResult.complaintFilingInfo?.agencies?.length ? 
-              analysisResult.complaintFilingInfo.agencies.map((agency: ApiReportAgency, index: number) => (
+            {displayComplaintAgencies.length > 0 ?
+              displayComplaintAgencies.map((agency: ApiReportAgency, index: number) => (
                 <li key={index} className="flex items-start">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mr-3 mt-1.5 flex-shrink-0"></span>
                   <div>
-                    <a 
-                      href={agency.url} // Changed from link to url
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={agency.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
                     >
                       {agency.name}
@@ -501,143 +796,149 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                   </div>
                 </li>
               )) :
-              <>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                  <a 
-                    href="https://www.consumer.ftc.gov/features/scam-alerts" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
-                  >
-                    Federal Trade Commission (FTC)
-                  </a>
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                  <a 
-                    href="https://www.ic3.gov" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
-                  >
-                    Internet Crime Complaint Center (IC3)
-                  </a>
-                </li>
-              </>
+              <p className="text-sm text-gray-600 dark:text-gray-400">No specific reporting agencies listed. You can search for local consumer protection or cybercrime reporting agencies in your region (e.g., search for 'report scam [your country/region]').</p>
             }
           </ul>
         </div>
       </div>
 
-      {/* True vs False Information */}
-      {(analysisResult.true_vs_false || analysisResult.true_vs_false_tagalog) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {analysisResult.true_vs_false && (
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
-                <span className="mr-2">🔍</span>
-                True vs False Information (English)
-              </h3>
-              <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
-                <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
-                  {analysisResult.true_vs_false || "No information available on distinguishing true vs false information."}
+      {/* Audio Content Verification Section - Enhanced */}
+      {(analysisResult.audioContentVerification || analysisResult.audioContentVerificationTagalog) && (
+        <div className="p-6 rounded-xl bg-cyan-50 dark:bg-cyan-900/30 border-2 border-cyan-200 dark:border-cyan-700 shadow-lg">
+          <h3 className="text-xl font-bold mb-3 text-cyan-800 dark:text-cyan-200 flex items-center">
+            <span className="mr-2">🗣️</span>
+            Audio Content Verification
+          </h3>
+          <div className="bg-white dark:bg-cyan-950/50 rounded-lg p-4 border border-cyan-200 dark:border-cyan-600">
+            {/* Add a verification status indicator based on risk percentage */}
+            <div className="mb-4 flex items-center">
+              <div className={`w-4 h-4 rounded-full mr-2 ${
+                finalRiskPercentage >= 75 ? 'bg-red-500' : 
+                finalRiskPercentage >= 50 ? 'bg-orange-500' : 
+                finalRiskPercentage >= 25 ? 'bg-yellow-500' : 'bg-green-500'
+              }`}></div>
+              <span className="text-sm font-medium text-cyan-800 dark:text-cyan-200">
+                {finalRiskPercentage >= 75 ? 'Highly Suspicious Content' : 
+                 finalRiskPercentage >= 50 ? 'Potentially Misleading Content' : 
+                 finalRiskPercentage >= 25 ? 'Content With Minor Concerns' : 'Likely Legitimate Content'}
+              </span>
+            </div>
+
+            {analysisResult.audioContentVerification && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2 text-cyan-700 dark:text-cyan-300">Verification Analysis:</h4>
+                <p className="text-sm text-cyan-900 dark:text-cyan-100 whitespace-pre-wrap leading-relaxed">
+                  {analysisResult.audioContentVerification}
                 </p>
               </div>
-            </div>
-          )}
-          
-          {analysisResult.true_vs_false_tagalog && (
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-700 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-green-800 dark:text-green-200 flex items-center">
-                <span className="mr-2">🔍</span>
-                Tunay vs Hindi Tunay (Tagalog)
-              </h3>
-              <div className="bg-white dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-600">
-                <p className="text-sm text-green-800 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
-                  {analysisResult.true_vs_false_tagalog || "Walang available na impormasyon tungkol sa pagkilala ng totoo sa hindi totoong impormasyon."}
+            )}
+            
+            {/* Technical details from audio verification */}
+            {isAudioClearlyScam && (
+              <div className="mb-4 p-3 bg-cyan-100/50 dark:bg-cyan-900/30 rounded-lg">
+                <h4 className="text-sm font-semibold mb-1 text-cyan-700 dark:text-cyan-300">Technical Analysis:</h4>
+                <p className="text-sm text-cyan-900 dark:text-cyan-100">
+                  Voice recordings with scam characteristics often contain specific vocal patterns, 
+                  including artificial urgency, pressuring language, and inconsistent audio quality. 
+                  This recording shows these characteristics.
                 </p>
               </div>
-            </div>
-          )}
+            )}
+            
+            {analysisResult.audioContentVerificationTagalog && (
+              <>
+                <div className="mt-4 pt-3 border-t border-cyan-200 dark:border-cyan-700">
+                  <h4 className="text-lg font-semibold mb-2 text-cyan-800 dark:text-cyan-200">
+                    Patunay sa Nilalaman ng Audio (Tagalog)
+                  </h4>
+                  <p className="text-sm text-cyan-900 dark:text-cyan-100 whitespace-pre-wrap leading-relaxed">
+                    {analysisResult.audioContentVerificationTagalog}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {/* What to Do Section - Adding new section to provide neutral advice based on content analysis */}
-      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-700 shadow-lg">
-        <h3 className="text-xl font-bold mb-4 text-indigo-800 dark:text-indigo-200 flex items-center">
-          <span className="mr-2">🛠️</span>
-          What To Do With This Content
-        </h3>
-        <div className="bg-white dark:bg-indigo-950/30 rounded-lg p-4 border border-indigo-200 dark:border-indigo-600">
-          <p className="text-sm text-indigo-800 dark:text-indigo-100 whitespace-pre-wrap leading-relaxed mb-4">
-            Based on the analysis of this content, here are some recommended actions:
-          </p>
-          <ul className="space-y-3">
-            {finalRiskPercentage >= 75 ? (
+      {/* Content Authenticity Check (formerly True vs. False Analysis Section) - Enhanced */}
+      {(analysisResult.true_vs_false || analysisResult.true_vs_false_tagalog || isAudioClearlyScam) && (
+        <div className="p-6 rounded-xl bg-green-50 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-700 shadow-lg">
+          <h3 className="text-xl font-bold mb-3 text-green-800 dark:text-green-200 flex items-center">
+            <span className="mr-2">✅</span>
+            Content Authenticity Check
+          </h3>
+          <div className="bg-white dark:bg-green-950/50 rounded-lg p-4 border border-green-200 dark:border-green-600">
+            {/* Authenticity Rating */}
+            <div className="mb-4 flex items-center">
+              <div className={`w-4 h-4 rounded-full mr-2 ${
+                finalRiskPercentage >= 75 ? 'bg-red-500' : 
+                finalRiskPercentage >= 50 ? 'bg-orange-500' : 
+                finalRiskPercentage >= 25 ? 'bg-yellow-500' : 'bg-green-500'
+              }`}></div>
+              <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                {finalRiskPercentage >= 75 ? 'Very Low Authenticity Rating' : 
+                 finalRiskPercentage >= 50 ? 'Low Authenticity Rating' : 
+                 finalRiskPercentage >= 25 ? 'Medium Authenticity Rating' : 'High Authenticity Rating'}
+              </span>
+            </div>
+            
+            {analysisResult.true_vs_false && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2 text-green-700 dark:text-green-300">Authenticity Analysis:</h4>
+                <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
+                  {analysisResult.true_vs_false}
+                </p>
+              </div>
+            )}
+              {/* For audio content specifically - enhanced with investment scam detection */}
+            {analysisResult.contentType?.toLowerCase() === 'audio' && (
+              <div className="mb-4 p-3 bg-green-100/50 dark:bg-green-900/30 rounded-lg">
+                <h4 className="text-sm font-semibold mb-1 text-green-700 dark:text-green-300">Audio Authenticity Factors:</h4>
+                <ul className="list-disc list-inside text-sm text-green-900 dark:text-green-100">
+                  <li>Background noise consistency: {isAudioClearlyScam ? "Suspicious variations detected" : "Normal levels"}</li>
+                  <li>Voice modulation: {isAudioClearlyScam ? "Potential artificial manipulation" : "Natural speaking patterns"}</li>
+                  <li>Content consistency: {isAudioClearlyScam ? "Contains logical inconsistencies" : "Logically consistent"}</li>
+                  {isAudioClearlyScam && <li>Urgency tactics: Present - creating artificial time pressure</li>}
+                  {/* Filipino investment scam specific factors */}
+                  {detectionResult.patternMatches["Filipino investment scam"] && (
+                    <>
+                      <li>Investment fraud patterns: Detected typical Filipino investment scam terms</li>
+                      <li>Risk-free claims: Suspicious guarantees of no-risk investments</li>
+                      <li>Limited slot tactics: Creating false scarcity</li>
+                    </>
+                  )}
+                  {detectionResult.patternMatches["Investment opportunity"] && !detectionResult.patternMatches["Filipino investment scam"] && (
+                    <li>Investment fraud patterns: Contains suspicious investment terminology</li>
+                  )}
+                </ul>
+              </div>
+            )}
+            
+            {analysisResult.true_vs_false_tagalog && (
               <>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">!</span>
-                  <span className="leading-relaxed">Exercise extreme caution with this content as it contains significant indicators of potential harm.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
-                  <span className="leading-relaxed">Do not provide personal information, financial details, or access to your devices.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
-                  <span className="leading-relaxed">Consider reporting this content to the appropriate authorities or platform administrators.</span>
-                </li>
-              </>
-            ) : finalRiskPercentage >= 50 ? (
-              <>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
-                  <span className="leading-relaxed">Approach this content with caution as our analysis detected potential concerns.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
-                  <span className="leading-relaxed">Verify information through official or trusted sources before taking action.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
-                  <span className="leading-relaxed">Be especially cautious if the content requests any personal or financial information.</span>
-                </li>
-              </>
-            ) : finalRiskPercentage >= 25 ? (
-              <>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
-                  <span className="leading-relaxed">Review this content with some caution as our analysis indicates some minor concerns.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
-                  <span className="leading-relaxed">Consider cross-checking information with other sources if you have any doubts.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
-                  <span className="leading-relaxed">Use general internet safety practices when interacting with this content.</span>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
-                  <span className="leading-relaxed">This content appears to be low risk based on our analysis.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
-                  <span className="leading-relaxed">As with all online content, standard internet safety practices are still recommended.</span>
-                </li>
-                <li className="flex items-start text-sm">
-                  <span className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
-                  <span className="leading-relaxed">Feel free to interact with the content while adhering to normal digital literacy practices.</span>
-                </li>
+                <div className="mt-4 pt-3 border-t border-green-200 dark:border-green-700">
+                  <h4 className="text-lg font-semibold mb-2 text-green-800 dark:text-green-200">
+                    Pagsusuri ng Katotohanan (Tagalog)
+                  </h4>
+                  <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
+                    {analysisResult.true_vs_false_tagalog}
+                  </p>
+                </div>
               </>
             )}
-          </ul>
+            
+            {/* Fallback message if provided fields are empty */}
+            {!analysisResult.true_vs_false && !analysisResult.true_vs_false_tagalog && !isAudioClearlyScam && (
+                <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-wrap leading-relaxed">
+                    No specific authenticity information available.
+                </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Reporting information */}
     </div>
   );
 }

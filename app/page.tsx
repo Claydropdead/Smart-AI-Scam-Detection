@@ -3,13 +3,10 @@
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function LandingPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default function LandingPage() {  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState('hero');
   const [isScrolled, setIsScrolled] = useState(false);
-  // These state variables are used in auto-rotation intervals and referenced in JSX
-  const [threatIndex, setThreatIndex] = useState(0); // Used in auto-rotation
-  const [testimonialIndex, setTestimonialIndex] = useState(0); // Used in auto-rotation
+  // Removed unused state variables for auto-rotation
   const [displayText, setDisplayText] = useState("");
   const fullText = "Protect Yourself from Digital Threats";
   
@@ -112,21 +109,11 @@ export default function LandingPage() {
       if (current) setCurrentSection(current);
     };
 
-    window.addEventListener('scroll', handleScroll);
-
-    // Auto-rotate threats and testimonials
-    const threatInterval = setInterval(() => {
-      setThreatIndex(prev => (prev + 1) % threats.length);
-    }, 6000);
-
-    const testimonialInterval = setInterval(() => {
-      setTestimonialIndex(prev => (prev + 1) % testimonials.length);
-    }, 4000);
+    window.addEventListener('scroll', handleScroll);    // We don't need auto-rotation anymore since we're not using threatIndex and testimonialIndex
+    // Auto-rotation has been removed as it's not being used in the UI
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearInterval(threatInterval);
-      clearInterval(testimonialInterval);
     };
   }, [fullText, threats.length, testimonials.length]);
 
