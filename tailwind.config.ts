@@ -12,15 +12,14 @@ export default {
         foreground: "var(--foreground)",
       },      keyframes: {
         typing: {
-          '0%': { width: '0%', visibility: 'visible' },
-          '40%': { width: '100%', visibility: 'visible' },
-          '60%': { width: '100%', visibility: 'visible' },
-          '80%': { width: '0%', visibility: 'visible' },
-          '100%': { width: '0%', visibility: 'hidden' }
-        },
-        blink: {
-          '0%, 100%': { borderColor: 'transparent' },
-          '50%': { borderColor: 'white' }
+          '0%': { width: '0%' },
+          '25%': { width: '100%' },
+          '75%': { width: '100%' },
+          '100%': { width: '0%' }
+        },        blink: {
+          '0%': { borderRightColor: 'transparent' },
+          '50%': { borderRightColor: 'white' },
+          '100%': { borderRightColor: 'transparent' }
         },
         uploadArrow: {
           '0%': { transform: 'translateY(0)' },
@@ -54,10 +53,9 @@ export default {
           '0%, 100%': { opacity: '0.5' },
           '50%': { opacity: '1' }
         }
-      },
-      animation: {
-        typing: 'typing 4s steps(40) infinite',
-        blink: 'blink 1s step-end infinite',
+      },      animation: {
+        typing: 'typing 6s steps(40) infinite',
+        blink: 'blink 0.8s step-end infinite',
         uploadArrow: 'uploadArrow 1.5s ease-in-out infinite',
         particle1: 'particle1 2s ease-out forwards',
         particle2: 'particle2 2s ease-out forwards',
