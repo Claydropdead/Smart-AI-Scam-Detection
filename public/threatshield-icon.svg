@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <!-- Shield Background -->
+  <path d="M128 16L32 64V136C32 188.6 73.4 236.8 128 248C182.6 236.8 224 188.6 224 136V64L128 16Z" fill="#3366FF" />
+  
+  <!-- Shield Inner Glow -->
+  <path d="M128 36L52 76V136C52 178 85.4 217.6 128 228C170.6 217.6 204 178 204 136V76L128 36Z" fill="#0044CC" />
+  
+  <!-- AI Circuit Pattern -->
+  <path d="M96 112H160M96 144H160M128 96V168M88 96H168M88 168H168" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  
+  <!-- Security Lock Symbol -->
+  <circle cx="128" cy="132" r="24" fill="#FFFFFF" />
+  <path d="M122 132C122 128.7 124.7 126 128 126C131.3 126 134 128.7 134 132C134 135.3 131.3 138 128 138" stroke="#0044CC" stroke-width="4" stroke-linecap="round" />
+  <path d="M128 138V146" stroke="#0044CC" stroke-width="4" stroke-linecap="round" />
+</svg>
