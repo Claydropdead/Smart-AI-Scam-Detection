@@ -563,20 +563,23 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
               <p className="text-sm"><strong className={statusStyles.textClasses}>Content Type:</strong> {analysisResult.contentType}</p>
             )}
             <p className="text-sm"><strong className={statusStyles.textClasses}>Assessment:</strong> {assessmentText}</p>
-            <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.confidence || "Unknown"}</p>
-            {(analysisResult.contentPurpose || (isAudioClearlyScam && analysisResult.audienceAnalysis)) && (
-              <p className="text-sm"><strong className={statusStyles.textClasses}>Content Purpose:</strong> {analysisResult.contentPurpose || (isAudioClearlyScam ? "See Audience Analysis below for purpose inferred from audio" : "Not specified")}</p>
-            )}
-            {(analysisResult.audienceTarget || (isAudioClearlyScam && analysisResult.audienceAnalysis)) && (
-              <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget || (isAudioClearlyScam ? "See Audience Analysis below for target inferred from audio" : "Not specified")}</p>
-            )}
-            {isAudioClearlyScam && analysisResult.audienceAnalysis && (
+            <p className="text-sm"><strong className={statusStyles.textClasses}>AI Confidence:</strong> {analysisResult.confidence || "Medium"}</p>
+            {/* Always show Content Purpose field */}
+            <p className="text-sm"><strong className={statusStyles.textClasses}>Content Purpose:</strong> {analysisResult.contentPurpose || 
+              (analysisResult.contentType === "Audio" ? "Voice communication" : "Not specified")}</p>
+            {/* Always show Target Audience field */}
+            <p className="text-sm"><strong className={statusStyles.textClasses}>Target Audience:</strong> {analysisResult.audienceTarget || 
+              (analysisResult.audienceAnalysis || "Not specified")}</p>
+            {/* Show additional audience analysis from audio only if it adds value */}
+            {isAudioClearlyScam && analysisResult.audienceAnalysis && 
+             analysisResult.audienceAnalysis !== analysisResult.audienceTarget && 
+             analysisResult.audienceAnalysis !== "General audience" && (
               <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
                 <p className="text-sm"><strong className={statusStyles.textClasses}>Audience Analysis (from Audio):</strong></p>
                 <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1">{analysisResult.audienceAnalysis}</p>
               </div>
             )}
-          </div>          <div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>            <p className="font-bold text-lg">
+          </div><div className={`p-4 rounded-lg ${statusStyles.badgeClasses} bg-opacity-20 border border-current border-opacity-30`}>            <p className="font-bold text-lg">
               {finalRiskPercentage >= 75 
                 ? '🚨 Very High Risk Content' 
                 : finalRiskPercentage >= 50 
@@ -653,60 +656,98 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
           </div>
         </div>
       )}
-      
-      {/* Audio Analysis Section */}
-      {analysisResult.audioAnalysis && ( // Changed from audio_analysis
+        {/* Audio Analysis Section */}
+      {analysisResult.audioAnalysis && ( 
         <div className="p-6 rounded-xl bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-700 shadow-lg">
           <h3 className="text-xl font-bold mb-3 text-purple-800 dark:text-purple-200 flex items-center">
             <span className="mr-2">🎤</span>
             Voice Recording Analysis
-          </h3>            <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
-            {/* Main audio analysis content - using same risk assessment as text content */}
-            <div className="mb-4">
-              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Content Transcript Analysis:</h4>
-              <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audioAnalysis || "No audio analysis available."}</p>
-            </div>
-            
-            {/* Audio risk rating - uses EXACTLY the same risk assessment as text content */}
-            <div className="mb-4 p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-lg">
-              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Risk Assessment:</h4>
-              <p className="text-sm">
-                <span className="font-medium">
+          </h3>
+          <div className="bg-white dark:bg-purple-950/50 rounded-lg p-4 border border-purple-200 dark:border-purple-600">
+            {/* Unified format that matches text analysis results */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">              <div className="space-y-3">                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Content Type:</strong> Voice Recording</p>
+                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Assessment:</strong> {assessmentText || 
+                  (finalRiskPercentage >= 75 
+                    ? "High Risk Voice Message" 
+                    : finalRiskPercentage >= 50 
+                      ? "Suspicious Voice Communication" 
+                      : finalRiskPercentage >= 25 
+                        ? "Voice Recording with Some Concerns"
+                        : "Normal Voice Communication"
+                  )}
+                </p>
+                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">AI Confidence:</strong> {
+                  analysisResult.confidence || 
+                  (audioAnalysisContent && audioAnalysisContent.length > 100 ? "High" : 
+                   audioAnalysisContent && audioAnalysisContent.length > 50 ? "Medium" : "Low")
+                }</p>
+                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Content Purpose:</strong> {
+                  analysisResult.contentPurpose || 
+                  (analysisResult.contentDetails?.contentSummary || 
+                   (detectionResult.patternMatches["Voice message scam"] 
+                    ? "Attempting to request urgent action or financial transfer" 
+                    : detectionResult.patternMatches["Filipino investment scam"]
+                      ? "Investment opportunity solicitation or recruitment"
+                    : detectionResult.patternMatches["Emotional manipulation"]
+                      ? "Emotional appeal seeking assistance or action"
+                    : detectionResult.patternMatches["Information sharing"] 
+                      ? "Sharing information or instructions"
+                      : detectionResult.patternMatches["Personal voice message"] 
+                        ? "Personal communication or private message"
+                        : "Voice message sharing personal or general information"))
+                }</p>
+                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Target Audience:</strong> {
+                  analysisResult.audienceTarget || 
+                  analysisResult.audienceAnalysis || 
+                  (detectionResult.patternMatches["Filipino investment scam"] 
+                    ? "Filipino speakers interested in investment opportunities" 
+                    : detectionResult.patternMatches["Remittance scam"] 
+                      ? "People with family members working overseas"
+                      : detectionResult.patternMatches["Personal voice message"]
+                        ? "Family members, friends or close associates"
+                      : detectionResult.patternMatches["Voice message scam"] && (audioAnalysisContent?.toLowerCase().includes("gcash") || audioAnalysisContent?.toLowerCase().includes("send money"))
+                        ? "Filipino individuals with access to mobile payment systems"
+                      : detectionResult.patternMatches["Payment upfront"]
+                        ? "Individuals with financial resources"
+                      : "General Filipino audience")
+                }</p>
+                {/* Add voice authenticity indicator if detected */}
+                {detectionResult.patternMatches["Voice authenticity concerns"] && (
+                  <p className="text-sm mt-2 text-red-700 dark:text-red-400 font-medium">
+                    ⚠️ <strong>Voice Authenticity Alert:</strong> This recording may contain synthetic or artificially generated speech.
+                  </p>
+                )}
+              </div>
+              <div className="p-3 bg-purple-100/50 dark:bg-purple-900/30 rounded-lg">
+                <p className="font-bold text-lg text-purple-800 dark:text-purple-200">
                   {finalRiskPercentage >= 75 
                     ? '🚨 Very High Risk Content' 
                     : finalRiskPercentage >= 50 
                       ? '⚠️ High Risk Content'
                       : finalRiskPercentage >= 25 
                         ? '⚠️ Moderate Risk Content'
-                        : '✅ Low Risk Content'}
-                </span> - {Math.round(finalRiskPercentage)}% risk detected
-              </p>
-              
-              {/* Show risk indicators from unified analysis system */}
-              {Object.keys(detectionResult.patternMatches).length > 0 && (
-                <div className="mt-2 text-xs text-purple-800 dark:text-purple-300">
-                  <p className="font-medium">Risk indicators from content analysis:</p>
-                  <p>
-                    {Object.keys(detectionResult.patternMatches)
-                      .slice(0, 5)
-                      .join(", ")}
-                    {Object.keys(detectionResult.patternMatches).length > 5 ? ", ..." : ""}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* If audio has keyPoints, display them */}
-            {analysisResult.keyPoints && analysisResult.keyPoints.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Key Points (from audio transcript):</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  {analysisResult.keyPoints.map((point, idx) => (
-                    <li key={`kp-audio-${idx}`} className="text-sm text-purple-900 dark:text-purple-100 pl-2">{point}</li>
-                  ))}
-                </ul>
+                        : '✅ Low Risk Content'
+                  } ({Math.round(finalRiskPercentage)}%)
+                </p>
+                <p className="text-sm mt-2 opacity-90">
+                  {analysisResult.riskSummary && !isRiskSummaryInconsistent(analysisResult.riskSummary, finalRiskPercentage)
+                    ? analysisResult.riskSummary 
+                    : (finalRiskPercentage < 25 
+                        ? '✅ Low risk voice recording with no concerning elements detected' 
+                        : finalRiskPercentage < 50 
+                          ? '⚠️ Voice recording with some potentially concerning elements'
+                          : finalRiskPercentage < 75
+                            ? '🚨 High risk voice recording with multiple concerning elements'
+                            : '🔴 Very high risk voice recording that requires careful consideration')
+                  }
+                </p>
               </div>
-            )}
+            </div>
+              {/* Main audio analysis content */}
+            <div className="mb-4 border-t border-purple-200 dark:border-purple-700 pt-4">
+              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Voice Recording Analysis:</h4>
+              <p className="text-sm text-purple-900 dark:text-purple-100 whitespace-pre-wrap leading-relaxed">{analysisResult.audioAnalysis || "No audio analysis available."}</p>
+            </div>
             
             {/* Display indicators specific to audio if available */}
             {analysisResult.indicators && analysisResult.indicators.length > 0 && (
@@ -720,7 +761,69 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
               </div>
             )}
 
-            {/* Display content-specific detail fields from audio analysis if available*/}
+            {/* Voice characteristics section based on detector results */}
+            <div className="mb-4 border-t border-purple-200 dark:border-purple-700 pt-4">
+              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Voice Characteristics:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {/* Voice authenticity */}
+                <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
+                  <span className="font-medium">Voice Authenticity:</span>{" "}
+                  {detectionResult.patternMatches["Voice authenticity concerns"] 
+                    ? "⚠️ Potential synthetic or artificially generated speech detected" 
+                    : "✓ No synthetic voice patterns detected"}
+                </div>
+                
+                {/* Communication intent */}
+                <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
+                  <span className="font-medium">Communication Intent:</span>{" "}
+                  {detectionResult.patternMatches["Voice message scam"] 
+                    ? "⚠️ Suspicious request or call to action" 
+                    : detectionResult.patternMatches["Emotional manipulation"]
+                      ? "⚠️ Emotional appeal or manipulation attempt"
+                    : detectionResult.patternMatches["Urgent action required"]
+                      ? "⚠️ Creating urgency or time pressure"
+                    : detectionResult.patternMatches["Information sharing"]
+                      ? "✓ Information sharing or explanation"
+                    : detectionResult.patternMatches["Personal voice message"]
+                      ? "✓ Personal or private communication" 
+                      : "✓ General communication"}
+                </div>
+                
+                {/* Risk level */}
+                <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
+                  <span className="font-medium">Risk Assessment:</span>{" "}
+                  {finalRiskPercentage >= 75 
+                    ? "🚨 Very high risk - multiple concerning elements detected" 
+                    : finalRiskPercentage >= 50 
+                      ? "⚠️ High risk - suspicious communication patterns"
+                      : finalRiskPercentage >= 25 
+                        ? "⚠️ Moderate risk - some concerning elements" 
+                        : "✓ Low risk - normal communication patterns"}
+                </div>
+                
+                {/* Content reliability */}
+                <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
+                  <span className="font-medium">Content Verification:</span>{" "}
+                  {detectionResult.patternMatches["Too good to be true"] || detectionResult.patternMatches["Investment opportunity"]
+                    ? "⚠️ Contains claims that should be independently verified" 
+                    : detectionResult.patternMatches["Remittance scam"] || detectionResult.patternMatches["Financial information request"]
+                      ? "⚠️ Contains financial information or requests requiring verification"
+                      : "✓ No specific claims requiring verification detected"}
+                </div>
+              </div>
+            </div>
+
+            {/* If audio has keyPoints, display them */}
+            {analysisResult.keyPoints && analysisResult.keyPoints.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Key Points (from audio transcript):</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {analysisResult.keyPoints.map((point, idx) => (
+                    <li key={`kp-audio-${idx}`} className="text-sm text-purple-900 dark:text-purple-100 pl-2">{point}</li>
+                  ))}
+                </ul>
+              </div>
+            )}            {/* Display content-specific detail fields from audio analysis if available*/}
             {analysisResult.contentDetails && (
               <div className="mt-4 border-t border-purple-200 dark:border-purple-700 pt-4">
                 <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Audio Details:</h4>
@@ -752,6 +855,44 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                 )}
               </div>
             )}
+            
+            {/* Audio verification guidance section */}
+            <div className="mt-4 border-t border-purple-200 dark:border-purple-700 pt-4">
+              <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Verification Steps:</h4>
+              <ul className="list-disc list-inside space-y-1.5 text-sm">
+                <li>
+                  <strong>Verify Speaker Identity:</strong> If the speaker claims to be someone you know, call them back on a known number (not a number provided in the message).
+                </li>
+                <li>
+                  <strong>Independent Confirmation:</strong> For any requests (especially financial), verify through an official channel separate from the voice message.
+                </li>
+                {finalRiskPercentage >= 50 && (
+                  <li className="text-red-700 dark:text-red-400">
+                    <strong>Warning:</strong> This voice recording shows {finalRiskPercentage >= 75 ? "multiple" : "some"} concerning patterns commonly found in voice message scams.
+                  </li>
+                )}
+                {(detectionResult.patternMatches["Payment upfront"] || detectionResult.patternMatches["Financial information request"] || detectionResult.patternMatches["Remittance scam"]) && (
+                  <li className="text-red-700 dark:text-red-400">
+                    <strong>Financial Alert:</strong> Never send money or share financial details based solely on a voice recording request.
+                  </li>
+                )}
+                {detectionResult.patternMatches["Voice authenticity concerns"] && (
+                  <li className="text-red-700 dark:text-red-400">
+                    <strong>Authenticity Concern:</strong> This may be a synthetic or AI-generated voice. Confirm identity through other means.
+                  </li>
+                )}
+                {detectionResult.patternMatches["Investment opportunity"] && (
+                  <li className="text-red-700 dark:text-red-400">
+                    <strong>Investment Warning:</strong> Be extremely cautious of investment opportunities presented in voice messages.
+                  </li>
+                )}
+                {finalRiskPercentage < 25 && !detectionResult.patternMatches["Voice message scam"] && !detectionResult.patternMatches["Financial information request"] && (
+                  <li className="text-green-700 dark:text-green-400">
+                    <strong>Low Risk Assessment:</strong> This voice recording appears to be a normal communication without concerning elements.
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       )}

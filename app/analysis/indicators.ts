@@ -168,10 +168,28 @@ export const commonIndicators: CommonIndicators = {
     patterns: ["gusto niyo po bang sumali", "sumali habang may promo", "gusto mo bang kumita", "kumita ng pera", "puhunan", "guaranteed earnings", "walang risk", "fully insured", "limited slot", "limited slots", "may slot", "may slots", "trading", "futurew", "futurewealth", "habang may promo", "weekly kahit", "kahit maliit", "kahit konti", "kahit", "lang ang puhunan", "lang puhunan", "kikitain mo", "kikita ka"],
     severity: 5,
     detected: false
+  },  "Voice message scam": {
+    patterns: ["voice recording", "voice message", "audio message", "listen to this", "ito ang number", "tawagan mo", "tawag", "i-call", "tatawag", "callback", "magkano", "need money", "pera", "send money", "click the link", "click link", "visit this", "check the website", "check website", "pumunta sa", "pakinggan mo", "makinig ka", "makinig kayo", "record", "recorded", "recording", "voice", "boses", "pakibuksan", "please open", "pakitingnan", "pasensya na", "sorry hindi ako", "hindi kita matawagan", "busy ako", "hindi ako available", "hindi ko magawa", "emergency", "importante", "kelangan ko", "kailangan ko", "tulungan mo ako", "tulong", "help", "text me back", "call me back", "i-text mo ako", "tawagan mo ako ulit", "makipag-usap", "makipag-communicate", "makipag-contact", "may kailangan", "may emergency"],
+    severity: 5, // Increased severity for voice message scams
+    detected: false
   },
-  "Voice message scam": {
-    patterns: ["voice recording", "voice message", "audio message", "listen to this", "ito ang number", "tawagan mo", "tawag", "i-call", "tatawag", "callback", "magkano", "need money", "pera", "send money", "click the link", "click link", "visit this", "check the website", "check website", "pumunta sa", "pakinggan mo", "makinig ka", "makinig kayo", "record", "recorded", "recording", "voice", "boses", "pakibuksan", "please open", "pakitingnan"],
+  "Information sharing": {
+    patterns: ["information", "details", "instructions", "guide", "paliwanag", "impormasyon", "detalye", "instruction", "paano", "how to", "tutorial"],
+    severity: 1,
+    detected: false
+  },  "Audio communication pattern": {
+    patterns: ["call back", "call me", "tawagan mo ako", "i-text mo", "message me", "sagot", "reply", "respond", "contact", "i'll wait", "waiting", "hihintayin", "antayin"],
+    severity: 2,
+    detected: false
+  },
+  "Voice authenticity concerns": {
+    patterns: ["AI voice", "synthetic voice", "artificial voice", "not real voice", "generated voice", "deep fake", "voice clone", "hindi totoong boses", "hindi authentic", "hindi tunay", "parang robot", "unusual accent", "strange pronunciation", "hindi natural", "irregular speech", "suspicious pauses", "scripted speech"],
     severity: 4,
+    detected: false
+  },
+  "Personal voice message": {
+    patterns: ["kamusta ka", "kamusta na", "miss kita", "miss na kita", "namimiss", "personal", "private", "family matter", "pamilya", "kaibigan", "kamaganak", "message for you", "para sa iyo", "para lang sa iyo", "para sayo", "sa'yo lang", "secret", "sikreto"],
+    severity: 1,
     detected: false
   }
 };

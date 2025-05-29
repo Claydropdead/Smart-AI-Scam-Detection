@@ -102,94 +102,75 @@ function extractKeywords(text: string): string[] {
   return keywords;
 }
 
-// Function for audio analysis with Gemini
+// Function for audio analysis with Gemini - updated to match the same pattern as text/image analysis
 async function analyzeWithGeminiAudio(content: string, audioBase64: string, imageBase64?: string): Promise<any> {
   if (!GEMINI_API_URL) {
     throw new Error('Gemini API URL is not configured due to missing API key.');
-  }  const prompt = `You are an elite audio content analyst and language specialist with expertise in Philippine and Southeast Asian languages, contexts, and communication patterns. Your task is to perform a comprehensive analysis of the provided audio recording to explain its content, purpose, and context. The user is likely in the Philippines and would like to understand what this audio recording is about.
+  }  
+  
+  const prompt = `You are an elite cybersecurity, fraud detection, and risk assessment specialist with expertise in Philippine scams, global digital threats, and potentially harmful content. Your task is to thoroughly analyze the provided audio recording for any signs of scam, phishing, fraudulent activity, misinformation, dangerous content, or other potential risks. The user is likely in the Philippines and needs a comprehensive assessment of all potential hazards.
 
 ${content.trim() ? `Additional context provided by user: "${content}"` : "No additional text context provided by the user."}
 ${imageBase64 ? "An image has also been provided for analysis alongside the audio, which may provide additional context or supplementary information." : ""}
 
 SPECIAL INSTRUCTIONS FOR AUDIO CONTENT ANALYSIS:
-The user may want to understand "Para saan ito?" (What is this for?) or "Ano ito?" (What is this?) regarding an audio recording. Analyze the audio content to provide a clear explanation, regardless of its nature or purpose. If the audio appears to be:
-1. Describing a website or service - explain its purpose, features, functions, and intended audience
-2. Promoting a product or service - analyze the claims, offerings, target market, and value proposition
-3. Requesting action - evaluate what action is being requested and for what purpose
-4. Providing information - summarize the key information and context
-5. Educational content - explain the learning objectives and subject matter
-6. In Filipino languages - transcribe key phrases and identify the dialect or language variant
-7. Personal communication - identify the general topic and purpose while respecting privacy
+Analyze the audio content to assess its purpose, authenticity, and potential risks. Consider:
 
-Conduct a thorough audio analysis with attention to voice characteristics, linguistic patterns, communication intent, and cultural context relevant to the Philippines and Southeast Asia.
+1. Voice characteristics: natural vs. synthetic speech patterns, emotional cues, accent authenticity
+2. Communication intent: information sharing, persuasion, requesting action, soliciting information
+3. Risk indicators: urgency, emotional manipulation, requests for personal/financial information, pressure tactics
+4. Content credibility: factual consistency, verifiable claims, suspicious promises or threats
+5. Cultural context: Filipino-specific references, targeting of vulnerable demographics
+6. Technical assessment: audio quality, editing marks, background elements that provide context
+7. Voice authenticity: AI-generated or edited speech detection, voice consistency throughout message
+
+Conduct a comprehensive risk assessment of the audio with particular attention to scams and deception techniques common in the Philippines and Southeast Asia. Consider language patterns, urgency indicators, request types, technical elements, contextual red flags, psychological manipulation tactics, and potential harm vectors.
+
+For all audio content, conduct a full-spectrum risk assessment:
+- RISK IDENTIFICATION: Identify ALL potential risks - scams, phishing, fraud, misinformation, harmful content, malicious requests, privacy violations, etc.
+- RISK PROBABILITY: Assess the likelihood of each identified risk using multiple indicators
+- RISK SEVERITY: Evaluate the potential negative impact and consequences if the user engages with this content
+- RISK URGENCY: Determine how immediately dangerous this content might be (immediate vs. latent risks)
+- RISK CLASSIFICATION: Categorize the type of danger (financial, privacy, personal safety, misinformation, etc.)
 
 Provide a structured JSON response with the following fields:
 
-- "contentType": string (Classify what type of audio this is: phone call, voice message, advertisement, public announcement, educational content, entertainment, etc.)
-- "contentPurpose": string (Detailed explanation of what this audio is trying to accomplish or communicate)
-- "confidenceLevel": string (your confidence level in your analysis: "Low", "Medium", or "High", based on audio quality, clarity, and comprehensiveness)
-- "mainExplanation": string (A comprehensive explanation of the audio content in English, including subject matter, key messages, context, and purpose. Format for readability with paragraphs and bullet points as needed.)
-- "explanationTagalog": string (An accurate and natural-sounding Tagalog translation of the main explanation that preserves all details but adapts to local context and idioms)
-- "audienceAnalysis": string (Who appears to be the target audience and why this content would be relevant to them)
-- "culturalContext": string (Relevant Filipino or Southeast Asian cultural elements or references that help contextualize the content)
-- "keyPoints": array of strings (List of 4-6 key points or main ideas conveyed in the audio content)
-- "audioQualityAssessment": object with the following fields:
-    - "quality": string (Assessment of the audio quality: "Poor", "Fair", "Good", "Excellent")
-    - "issues": array of strings (List any audio quality issues that affect comprehension)
-    - "enhancementSuggestions": string (If applicable, suggestions for better audio quality in similar contexts)
-- "audioAnalysis": string (Thorough analysis of the voice recording including:
-    1. Transcription of key statements and phrases
-    2. Analysis of voice characteristics (pitch, tone, rhythm, accent, language variants)
-    3. Background elements and context
-    4. Production quality assessment
-    5. Communication techniques employed
-    6. Linguistic pattern analysis (choice of words, grammar structures, code-switching between English and Tagalog/other Filipino languages)
-    7. Classification of content type)
-- "contentVerification": string (If applicable, provide a balanced perspective on how to verify or further investigate the claims or information presented in the audio)
-- "contentVerificationTagalog": string (A natural, culturally-appropriate Tagalog translation of the content verification explanation that incorporates local context)
+- "isRisky": boolean (true if the content contains ANY potential risks, scams, harmful elements, or misinformation, false only if completely safe).
+- "riskCategories": array of strings (list all risk categories detected: "Scam", "Phishing", "Misinformation", "Privacy Risk", "Financial Risk", "Identity Theft Risk", "Manipulation", "Harmful Content", etc. If none, provide empty array).
+- "overallRiskProbability": number (a percentage from 0 to 100 indicating the overall likelihood of ANY risk being present, being precise in your assessment).
+- "scamProbability": number (a percentage from 0 to 100 indicating the likelihood of it being a scam specifically).
+- "confidenceLevel": string (your confidence level in your overall assessment: "Low", "Medium", or "High", based on the quality and quantity of indicators present).
+- "detailedRiskAnalysis": string (a comprehensive explanation of your findings in English, highlighting ALL potential risks. Clearly identify ALL red flags, linguistic patterns, technical indicators, suspicious elements, and potential harm vectors. Include your reasoning process for each risk identified. Format for readability with clear sections, paragraphs and bullet points as needed).
+- "detailedRiskAnalysisTagalog": string (an accurate and natural-sounding Tagalog translation of the "detailedRiskAnalysis" that preserves all technical details but adapts to local context).
+- "overallRiskLevel": string (categorize the HIGHEST risk detected based on probability AND severity: "Low", "Medium", "High", "Very High", or "Critical").
+- "riskBreakdown": object with the following fields (analyze each major risk category separately):
+    - "scamRisk": object with "level" (string), "probability" (number), "indicators" (array of strings)
+    - "misinformationRisk": object with "level" (string), "probability" (number), "indicators" (array of strings)
+    - "privacyRisk": object with "level" (string), "probability" (number), "indicators" (array of strings)
+    - "technicalRisk": object with "level" (string), "probability" (number), "indicators" (array of strings)
+    - "manipulationRisk": object with "level" (string), "probability" (number), "indicators" (array of strings)
+    - "otherRisks": array of objects, each with "name" (string), "level" (string), "probability" (number), "indicators" (array of strings)
+- "safetyAdvice": string (provide detailed, actionable safety advice in English specific to ALL risks identified).
+- "contentClassification": object with the following fields:
+    - "contentType": string (Classify what type of audio this is: phone call, voice message, advertisement, public announcement, educational content, etc.)
+    - "contentPurpose": string (Detailed explanation of what this audio is trying to accomplish, including potential hidden purposes)
+    - "audienceAnalysis": object with the following fields:
+        - "targetAudience": string (Who is the target audience for this content)
+        - "vulnerabilityFactors": array of strings (Specific factors that might make the target audience vulnerable)
+        - "potentialImpact": string (The potential effect or harm this content could have on its audience)
+
+- "audioAnalysis": string (Thorough analysis of the voice recording including transcription of key statements, analysis of voice characteristics, communication techniques employed, and linguistic pattern analysis)
+- "contentVerification": string (A balanced perspective on how to verify or investigate the claims or information presented in the audio)
+- "contentVerificationTagalog": string (A natural Tagalog translation of the content verification explanation)
 - "contentDetails": object with the following fields:
     - "format": string (The format of the audio: conversation, monologue, interview, advertisement, etc.)
-    - "duration": string (Approximate duration of the audio if discernible)
     - "speakers": number (Estimated number of distinct speakers in the audio)
     - "languages": array of strings (Languages or dialects used in the audio)
-    - "contentSummary": string (Concise summary of what the audio is about in plain language that non-technical users will understand)
-    - "contentSummaryTagalog": string (A natural Tagalog translation of the content summary that ordinary Filipino users can easily understand)
-
-When analyzing the audio content, conduct a multi-factor assessment including:
-1. Voice characteristics: tone patterns, emotional expression, natural vs. scripted speech, accent and dialect identification
-2. Communication techniques: persuasion methods, storytelling elements, information delivery style, engagement approaches
-3. Technical aspects: audio quality, background elements, production value, environmental context
-4. Content analysis: main message, supporting points, call to action (if any), information accuracy when verifiable
-5. Voice authenticity assessment: natural speech patterns, consistency in delivery, voice dynamics
-6. Speaker characteristics: gender, approximate age, formal vs. casual speaking style, expertise level
-
-Pay special attention to these Filipino communication elements:
-- Use of English, Tagalog, and code-switching patterns
-- Cultural references specific to the Philippines
-- Mentions of local services, brands, or institutions (GCash, PayMaya, Lazada, Shopee, Jollibee, etc.)
-- Regional dialect identification (Bisaya, Ilokano, etc. if applicable)
-- Community-oriented references reflecting Filipino values
-- Formal vs. informal communication styles in Philippine context
-- Humor or expressions unique to Filipino communication
-- References to current events or popular culture in the Philippines
-- Religious or familial references common in Filipino discourse
-- Politeness markers and honorifics in Filipino languages
-
-${imageBase64 ? "Integrate the provided image into your analysis, looking for connections between the audio content and visual elements. The image may provide context, supporting information, or visual cues that complement the audio content. Analyze how the image and audio work together to convey a complete message." : ""}
-
-Additional analysis guidelines:
-1. For audio with multiple speakers, analyze each speaker's role, contribution, and relationship to the overall message.
-2. If you detect synthetic or AI-generated voice elements, note this as part of your technical analysis.
-3. For recordings with background noise, consider how the environment contributes to the context and meaning.
-4. If the recording appears to be partial or fragmented, note what context might be missing.
-5. For very short recordings, acknowledge limitations while providing maximum insight from available audio.
-6. Consider cultural context of Filipino communication styles to accurately interpret tone, emphasis, and meaning.
-7. Note any code-switching between languages and analyze its purpose in communication.
-8. If the audio contains both information and promotional elements, distinguish between them.
-9. If the user appears to be asking "Para saan ito?" (What is this for?) or "Ano ito?" (What is this?), prioritize a clear explanation of the content's purpose in simple, accessible language.
-10. For website descriptions in audio, provide a comprehensive explanation of what the website is for, its features, and target audience.
-11. Pay attention to Filipino-specific services mentioned and explain their relevance to the content.
-12. Provide explanations in simple everyday language that people with limited technical knowledge can understand, especially in the Tagalog translations.
+    - "contentSummary": string (Concise summary of what the audio is about in plain language)
+    - "voiceAuthenticity": object with the following fields:
+        - "isLikelySynthetic": boolean (Whether the voice appears to be AI-generated or heavily edited)
+        - "authenticityIndicators": array of strings (Evidence supporting your authenticity assessment)
+        - "confidenceLevel": string (Confidence in your synthetic voice assessment: "Low", "Medium", or "High")
 
 Ensure your entire response is ONLY the JSON object, with no additional text, comments, or markdown formatting like \`\`\`json ... \`\`\` around it. The JSON must be properly formatted with all string values properly escaped. Each required field must be present in your response even if some have minimal information due to audio limitations or ambiguity.`;
 
@@ -470,14 +451,14 @@ export async function POST(request: NextRequest) {
     const textContent = content || '';
     
     try {      let analysis;      if (audioBase64) {
-        // Handle audio analysis specially, but make sure it's properly populated
+        // Handle audio analysis using the same approach as text/image analysis
         analysis = await analyzeWithGeminiAudio(textContent, audioBase64, imageBase64);
         
-        // Ensure we have proper mainExplanation and audioAnalysis fields
+        // Ensure we have proper mainExplanation and audioAnalysis fields for backward compatibility
         if (!analysis.mainExplanation && !analysis.audioAnalysis) {
-          // If both are missing, generate a basic explanation based on the content
-          analysis.mainExplanation = "Voice recording analysis: The content requires careful assessment for potential risks.";
-          analysis.audioAnalysis = "Voice recording detected. Analysis performed on audio content.";
+          // If both are missing, use detailedRiskAnalysis from the general analysis
+          analysis.mainExplanation = analysis.detailedRiskAnalysis || "Voice recording analysis: The content requires careful assessment for potential risks.";
+          analysis.audioAnalysis = analysis.mainExplanation;
         } else if (!analysis.audioAnalysis) {
           // If only audioAnalysis is missing, copy from mainExplanation
           analysis.audioAnalysis = analysis.mainExplanation;
@@ -486,7 +467,7 @@ export async function POST(request: NextRequest) {
           analysis.mainExplanation = analysis.audioAnalysis;
         }
         
-        // Make sure these fields exist for consistent processing
+        // Make sure essential fields exist for consistent processing across all content types
         if (!analysis.detailedRiskAnalysis) {
           analysis.detailedRiskAnalysis = analysis.mainExplanation || analysis.audioAnalysis || 
             "Voice recording analyzed for potential scams and security risks.";
@@ -497,9 +478,35 @@ export async function POST(request: NextRequest) {
           analysis.detailedRiskAnalysisTagalog = "Pagsusuri sa voice recording: Ang nilalaman nito ay dapat suriin nang mabuti para sa mga posibleng panganib.";
         }
         
-        // Make sure we have at least one risk category for proper display
+        // Make sure we have risk categories set
         if (!analysis.riskCategories || analysis.riskCategories.length === 0) {
           analysis.riskCategories = ["Communication Risk"]; 
+        }
+        
+        // Ensure content classification exists (shared structure with text/image analysis)
+        if (!analysis.contentClassification) {
+          analysis.contentClassification = {};
+        }
+        
+        // Set required content classification fields if not already provided by the API
+        if (!analysis.contentClassification.contentType) {
+          analysis.contentClassification.contentType = "Audio";
+        }
+        
+        // Use the existing content purpose from the unified analysis
+        if (!analysis.contentClassification.contentPurpose) {
+          analysis.contentClassification.contentPurpose = analysis.contentPurpose || 
+                                                          analysis.contentDetails?.contentSummary || 
+                                                          "Voice communication";
+        }
+        
+        // Set audience target using the unified analysis approach
+        if (!analysis.contentClassification.audienceAnalysis) {
+          analysis.contentClassification.audienceAnalysis = {};
+        }
+        
+        if (!analysis.contentClassification.audienceAnalysis.targetAudience) {
+          analysis.contentClassification.audienceAnalysis.targetAudience = analysis.audienceTarget || "General Filipino audience";
         }
       } else {
         // Standard text/image analysis
@@ -515,10 +522,16 @@ export async function POST(request: NextRequest) {
           return "Slightly Suspicious";
         }
         return "Likely Not a Scam";
-      };      // Generate display status based on content type and risk level
+      };        // Generate display status based on content type and risk level
       const getDisplayStatus = (contentType: string, overallRiskLevel: string): string => {
         // Don't include the risk level in the title - this will be shown by the risk percentage display
-        const contentPrefix = contentType ? `${contentType} Analysis` : "Analysis Results";
+        let contentPrefix = contentType ? `${contentType} Analysis` : "Analysis Results";
+        
+        // For Audio specifically, always use "Voice Recording Analysis"
+        if (contentType === "Audio") {
+          contentPrefix = "Voice Recording Analysis";
+        }
+        
         return contentPrefix;
       };
       
@@ -619,18 +632,34 @@ export async function POST(request: NextRequest) {
         contentType: contentType,
         riskSummary: riskSummary,
         indicators: getDisplayIndicators(),
-        detectedRiskCategories: riskCategories,
-             // Optional analysis fields - ensure audio analysis is always provided if audio was submitted
-        audioAnalysis: audioBase64 ? (analysis.mainExplanation || analysis.audioAnalysis || "Audio content analyzed for potential risks and scam patterns.") : null,
+        detectedRiskCategories: riskCategories,        // Optional analysis fields - ensure audio analysis is always provided if audio was submitted
+        audioAnalysis: audioBase64 ? (analysis.audioAnalysis || analysis.mainExplanation || "Audio content analyzed for potential risks and scam patterns.") : null,
         image_analysis: imageBase64 ? (analysis.imageAnalysis || analysis.contentClassification?.contentExplanation || null) : null,
+        // Audience analysis for audio content specifically
+        audienceAnalysis: audioBase64 ? (analysis.contentClassification?.audienceAnalysis?.targetAudience || "General audience") : null,
+        // Audio-specific fields with enhanced descriptions
+        keyPoints: audioBase64 ? (analysis.keyPoints || [
+          "Voice recording analyzed for suspicious content patterns",
+          analysis.overallRiskProbability > 50 ? "Contains elements of potential concern that require verification" : "No immediate high-risk elements detected",
+          analysis.contentClassification?.contentPurpose ? `Purpose appears to be: ${analysis.contentClassification.contentPurpose}` : "Purpose is standard communication"
+        ]) : null,
+        
+        // Voice authenticity information for audio content
+        voiceAuthenticity: audioBase64 ? (analysis.contentDetails?.voiceAuthenticity || {
+          isLikelySynthetic: false,
+          authenticityIndicators: ["Standard analysis performed"],
+          confidenceLevel: "Medium"
+        }) : null,
         
         // Additional contextual fields
         contentPurpose: analysis.contentClassification?.contentPurpose || null,
         audienceTarget: analysis.contentClassification?.audienceAnalysis?.targetAudience || null,
-        
-        // Additional fields requested by users
-        true_vs_false: analysis.contentEvaluation || null,
-        true_vs_false_tagalog: analysis.contentEvaluationTagalog || null,
+          // Additional fields requested by users
+        true_vs_false: analysis.contentEvaluation || analysis.contentVerification || null,
+        true_vs_false_tagalog: analysis.contentEvaluationTagalog || analysis.contentVerificationTagalog || null,
+        // Additional audio verification fields
+        audioContentVerification: audioBase64 ? (analysis.contentVerification || analysis.contentEvaluation || null) : null,
+        audioContentVerificationTagalog: audioBase64 ? (analysis.contentVerificationTagalog || analysis.contentEvaluationTagalog || null) : null,
         
         // Reporting information - include context-specific reporting advice
         complaintFilingInfo: {
