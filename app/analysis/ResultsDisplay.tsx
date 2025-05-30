@@ -2,7 +2,8 @@
 
 import { ScamDetectionResult, ApiReportAgency } from './interfaces'; // Updated import
 import { extractScamIndicators, getColorByPercentage } from './utils';
-import { getInitializedIndicators, detectIndicators, calculateRiskPercentage } from './indicators';
+// Pattern-based detection disabled - now using purely Gemini-based risk assessment
+// import { getInitializedIndicators, detectIndicators, calculateRiskPercentage } from './indicators';
 
 interface ResultsDisplayProps {
   analysisResult: ScamDetectionResult;
@@ -29,52 +30,27 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     }
     
     return false;
-  };  // Initialize indicators for detection
-  const indicators = getInitializedIndicators();
-  // Combine ALL content for a single, unified analysis - text, image, and audio
-  const audioContent = analysisResult.audioAnalysis || "";
+  };  // Pure Gemini-based risk assessment - no pattern matching
+  // Use the API's risk probability directly as the final risk percentage
+  let finalRiskPercentage = apiPercent;
   
-  // Make sure we give more weight to audio content by duplicating it multiple times if present
-  // This ensures audio analysis gets proper pattern matching even with limited text
-  const audioContentForAnalysis = audioContent ? `${audioContent} ${audioContent} ${audioContent}` : "";
+  // Get audio content for display purposes
+  const audioAnalysisContent = analysisResult.audioAnalysis;
   
-  const content = (
-    (analysisResult.explanation || "") + " " +
-    (scamContent || "") + " " +
-    (analysisResult.image_analysis || "") + " " +
-    audioContentForAnalysis // Audio analysis with triple weight for better detection
-  );
+  // Determine if content is high risk based purely on Gemini's assessment
+  const isAudioClearlyScam = !!(analysisResult.audioAnalysis && finalRiskPercentage >= 50);
   
-  // Run the SAME detection algorithm on all content
-  const detectionResult = detectIndicators(content, indicators);
-  
-  // Calculate the final risk percentage using the SAME logic for all content types
-  let finalRiskPercentage = calculateRiskPercentage(
-    detectionResult.patternMatches,
-    detectionResult,
-    apiPercent
-  );
-    // Get audio content for display purposes
-  const audioAnalysisContent = analysisResult.audioAnalysis;  // Determine if the content contains high-risk indicators (using the consolidated pattern detection)
-  // We now use a more comprehensive approach for audio analysis that considers any high-risk indicator
-  const isAudioClearlyScam = !!(analysisResult.audioAnalysis && (
-    // Check if any detected pattern has high severity (4+)
-    Object.values(detectionResult.patternMatches).some(match => match.severity >= 4) ||
-    // Or check specific high-risk patterns commonly found in audio scams
-    detectionResult.patternMatches["Voice message scam"] ||
-    detectionResult.patternMatches["Filipino investment scam"] ||
-    detectionResult.patternMatches["Investment opportunity"] ||
-    detectionResult.patternMatches["Remittance scam"] ||
-    detectionResult.patternMatches["Payment upfront"] ||
-    detectionResult.patternMatches["Financial information request"] ||
-    detectionResult.patternMatches["Too good to be true"] ||
-    detectionResult.patternMatches["Emotional manipulation"] ||
-    // Audio content with urgent requests should be flagged
-    detectionResult.patternMatches["Urgent action required"]
-  ));
-  // Updated audio risk assessment based on detected indicators
-  // Now we use the same detection logic for both text and audio
-  const isRiskOverriddenByAudio = false;
+  // No risk override needed - using pure Gemini assessment
+  const isRiskOverriddenByAudio = false;  // Helper function to check if content has specific characteristics based on Gemini's analysis
+  const hasContentCharacteristic = (characteristic: string): boolean => {
+    const explanation = (analysisResult.explanation || "").toLowerCase();
+    const contentPurpose = (analysisResult.contentPurpose || "").toLowerCase();
+    const audioAnalysis = (audioAnalysisContent || "").toLowerCase();
+    const allContent = `${explanation} ${contentPurpose} ${audioAnalysis}`;
+    
+    // Let Gemini's analysis determine the content characteristics
+    return allContent.includes(characteristic.toLowerCase());
+  };
     // No special handling needed for audio content anymore - we already applied the same risk 
   // calculation logic for all content types (text, image, audio) in the unified detection flow above.
   // Risk level comes directly from the unified content analysis.
@@ -88,8 +64,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   }
   
   // Get UI styles based on calculated risk percentage to ensure consistency
-  const statusStyles = getColorByPercentage(finalRiskPercentage);
-  // Prepare display explanation, prioritizing proper integration of audio analysis
+  const statusStyles = getColorByPercentage(finalRiskPercentage);  // Prepare display explanation, prioritizing proper integration of audio analysis
   let displayExplanation = analysisResult.explanation;
   const genericEnglishFallbacks = [
     "no detailed risk analysis available", 
@@ -98,22 +73,12 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   ];
   const isEnglishExplanationGeneric = !displayExplanation || 
     genericEnglishFallbacks.some(fallback => displayExplanation?.toLowerCase().includes(fallback));
+  
   // If we have audio analysis but generic text explanation, use audio analysis as the primary explanation
   if (audioAnalysisContent) {
     if (isEnglishExplanationGeneric) {
       // Replace with audio analysis completely with clear header
       displayExplanation = `Voice Recording Analysis: ${audioAnalysisContent}`;
-      
-      // If there are detected scam indicators, enhance the explanation
-      if (Object.entries(indicators).filter(([_, data]) => data.detected).length > 0) {
-        const detectedPatterns = Object.entries(indicators)
-          .filter(([_, data]) => data.detected)
-          .map(([name, _]) => name)
-          .slice(0, 3)
-          .join(", ");
-        
-        displayExplanation += `\n\nThe voice recording contains suspicious patterns including: ${detectedPatterns}.`;
-      }
     } else if (displayExplanation) {
       // Append audio analysis to existing explanation for completeness
       displayExplanation = `${displayExplanation}\n\nAdditional Voice Analysis: ${audioAnalysisContent}`;
@@ -121,6 +86,7 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   } else if (!displayExplanation) { 
     displayExplanation = "No English explanation available."; 
   }
+  
   // Prepare display explanation for Tagalog
   let displayExplanationTagalog = analysisResult.explanationTagalog;
   const genericTagalogFallbacks = [
@@ -130,32 +96,12 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
   ];
   const isTagalogExplanationGeneric = !displayExplanationTagalog ||
     genericTagalogFallbacks.some(fallback => displayExplanationTagalog?.toLowerCase().includes(fallback));
+  
   // If we have audio analysis but generic Tagalog explanation, use audio analysis info
   if (audioAnalysisContent) {
     if (isTagalogExplanationGeneric) {
       // Replace with audio analysis for Tagalog with clear header
       displayExplanationTagalog = `Pagsusuri ng Voice Recording: ${audioAnalysisContent}`;
-      
-      // If there are detected scam indicators, enhance the Tagalog explanation
-      if (Object.entries(indicators).filter(([_, data]) => data.detected).length > 0) {
-        const detectedPatterns = Object.entries(indicators)
-          .filter(([_, data]) => data.detected)
-          .map(([name, _]) => {
-            // Simple translation of common indicator names (just basic examples)
-            switch(name) {
-              case "Urgent action required": return "Kailangang-kailangan daw na aksyunan agad";
-              case "Financial information request": return "Hiling ng impormasyon tungkol sa pananalapi";
-              case "Too good to be true": return "Napakagandang alok na hindi kapani-paniwala";
-              case "Voice message scam": return "Panloloko gamit ang voice message";
-              case "Filipino investment scam": return "Panloloko sa pamumuhunan";
-              default: return name; // Keep English if no translation
-            }
-          })
-          .slice(0, 3)
-          .join(", ");
-        
-        displayExplanationTagalog += `\n\nAng voice recording ay naglalaman ng kahina-hinalang mga pattern gaya ng: ${detectedPatterns}.`;
-      }
     } else if (displayExplanationTagalog) {
       // Append audio analysis to existing Tagalog explanation
       displayExplanationTagalog = `${displayExplanationTagalog}\n\nKaragdagang Pagsusuri ng Audio: ${audioAnalysisContent}`;
@@ -164,63 +110,15 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     displayExplanationTagalog = "Hindi available ang paliwanag sa Tagalog.";
   }
   
-  // Extract any additional indicators from the original AI explanation for keyword processing
+  // Extract indicators from Gemini's analysis instead of pattern matching
   const originalExplanationForIndicators = analysisResult.explanation || "";
   const extractedIndicators = extractScamIndicators(originalExplanationForIndicators);
   
-  // Get all detected indicators from the standard pattern matching
-  const detectedIndicators = Object.entries(indicators)
-    .filter(([_, data]) => data.detected)
-    .map(([name, _]) => name)
-    // Sort by severity (highest first)
-    .sort((a, b) => {
-      return (indicators[b].severity || 0) - (indicators[a].severity || 0);
-    });
-
-  // The 'keywords' field is no longer in ScamDetectionResult from the API.
-  // If keyword extraction is still needed, it would have to be done client-side
-  // or the API would need to be updated to provide them.
-  // For now, this section is effectively disabled as analysisResult.keywords will be undefined.
-
-  // if (analysisResult.keywords && analysisResult.keywords.length > 0) { 
-  //   const displayKeywordMap: {[key: string]: string} = {
-  //     'limited-context': 'Limited Context Analysis'
-  //   };
-  //   analysisResult.keywords.forEach((keyword: string) => {
-  //     if (displayKeywordMap[keyword]) {
-  //       detectedIndicators.push(displayKeywordMap[keyword]);
-  //     }
-  //     else {
-  //       const formattedKeyword = keyword
-  //         .split('-')
-  //         .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-  //         .join(' ');
-  //       if (!detectedIndicators.includes(formattedKeyword)) {
-  //         detectedIndicators.push(formattedKeyword);
-  //       }
-  //     }
-  //   });
-  // }
+  // Use indicators extracted from Gemini's analysis
+  const detectedIndicators = extractedIndicators.slice(0, 5); // Limit to top 5 for display
   
-  // If no indicators were detected but we have AI-extracted ones
-  if (detectedIndicators.length === 0 && extractedIndicators.length > 0) {
-    // Use the first 3 extracted ones as simple phrases
-    for (let i = 0; i < Math.min(3, extractedIndicators.length); i++) {
-      const text = extractedIndicators[i];
-      // Extract a short phrase (5 words or less)
-      const shortPhrase = text.split(/\s+/).slice(0, 4).join(" ")
-        .replace(/[.,;:!?].*$/, "") // Remove endings with punctuation
-        .replace(/^\W+|\W+$/, ""); // Trim non-word characters
-        
-      if (shortPhrase.length > 3) {
-        detectedIndicators.push(shortPhrase);
-      }
-    }
-  }
-  
-  // Remove duplicates and limit to reasonable number
-  const uniqueIndicators = [...new Set(detectedIndicators)];
-  const finalIndicators = uniqueIndicators.slice(0, 8); // Limit to top 8 for display purposes
+  // Final indicators for display (use Gemini-extracted indicators)
+  const finalIndicators = detectedIndicators;
     
   // Get badge color based on risk percentage - matches the risk thresholds exactly
   const getBadgeColorClass = () => {
@@ -398,12 +296,10 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
 
   const apiProvidedAdvice = analysisResult.advice;
   const isApiAdviceGeneric = !apiProvidedAdvice || 
-    genericAdviceKeywords.some(keyword => apiProvidedAdvice.toLowerCase().includes(keyword));
-
-  if (isApiAdviceGeneric) {
+    genericAdviceKeywords.some(keyword => apiProvidedAdvice.toLowerCase().includes(keyword));  if (isApiAdviceGeneric) {
     // API advice is generic or missing - provide more specific advice based on detected indicators
-    if (detectionResult.patternMatches["Filipino investment scam"]) {
-      // Specific advice for Filipino investment scams
+    if (hasContentCharacteristic("investment") && (hasContentCharacteristic("filipino") || hasContentCharacteristic("tagalog") || hasContentCharacteristic("guaranteed") || hasContentCharacteristic("puhunan"))) {
+      // Specific advice for investment-related content with Filipino characteristics
       displayAdvice = filipinoInvestmentScamWarning + 
         "These are typically fraudulent schemes. Legitimate investments never guarantee earnings or promise 'no risk' returns. " +
         "Do not send any money, share personal information, or communicate further. Report this to authorities immediately.";
@@ -423,9 +319,8 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
     }  } else {
     // API provided specific advice
     displayAdvice = apiProvidedAdvice;
-    
-    // Add appropriate warning prefix based on scam type detected
-    if (detectionResult.patternMatches["Filipino investment scam"] && apiProvidedAdvice && 
+      // Add appropriate warning prefix based on scam type detected
+    if (hasContentCharacteristic("filipino") && hasContentCharacteristic("investment") && apiProvidedAdvice && 
         !apiProvidedAdvice.toLowerCase().includes("filipino") && 
         !apiProvidedAdvice.toLowerCase().includes("investment scam") &&
         !apiProvidedAdvice.toLowerCase().includes("guaranteed earnings")) {
@@ -680,39 +575,36 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                   analysisResult.confidence || 
                   (audioAnalysisContent && audioAnalysisContent.length > 100 ? "High" : 
                    audioAnalysisContent && audioAnalysisContent.length > 50 ? "Medium" : "Low")
-                }</p>
-                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Content Purpose:</strong> {
+                }</p>                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Content Purpose:</strong> {
                   analysisResult.contentPurpose || 
                   (analysisResult.contentDetails?.contentSummary || 
-                   (detectionResult.patternMatches["Voice message scam"] 
-                    ? "Attempting to request urgent action or financial transfer" 
-                    : detectionResult.patternMatches["Filipino investment scam"]
-                      ? "Investment opportunity solicitation or recruitment"
-                    : detectionResult.patternMatches["Emotional manipulation"]
-                      ? "Emotional appeal seeking assistance or action"
-                    : detectionResult.patternMatches["Information sharing"] 
-                      ? "Sharing information or instructions"
-                      : detectionResult.patternMatches["Personal voice message"] 
-                        ? "Personal communication or private message"
-                        : "Voice message sharing personal or general information"))
-                }</p>
-                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Target Audience:</strong> {
+                   (hasContentCharacteristic("urgent") || hasContentCharacteristic("financial")
+                    ? "Requesting urgent action or financial information" 
+                    : hasContentCharacteristic("investment")
+                      ? "Investment or financial opportunity"
+                    : hasContentCharacteristic("emotional") || hasContentCharacteristic("help")
+                      ? "Emotional appeal or assistance request"
+                    : hasContentCharacteristic("information") || hasContentCharacteristic("sharing")
+                      ? "Information sharing or explanation"
+                      : hasContentCharacteristic("personal") || hasContentCharacteristic("private")
+                        ? "Personal communication or message"
+                        : "General communication or content"))
+                }</p>                <p className="text-sm"><strong className="text-purple-800 dark:text-purple-200">Target Audience:</strong> {
                   analysisResult.audienceTarget || 
                   analysisResult.audienceAnalysis || 
-                  (detectionResult.patternMatches["Filipino investment scam"] 
+                  (hasContentCharacteristic("investment") && (hasContentCharacteristic("filipino") || hasContentCharacteristic("tagalog"))
                     ? "Filipino speakers interested in investment opportunities" 
-                    : detectionResult.patternMatches["Remittance scam"] 
+                    : hasContentCharacteristic("remittance") || hasContentCharacteristic("overseas")
                       ? "People with family members working overseas"
-                      : detectionResult.patternMatches["Personal voice message"]
+                      : hasContentCharacteristic("personal") || hasContentCharacteristic("family")
                         ? "Family members, friends or close associates"
-                      : detectionResult.patternMatches["Voice message scam"] && (audioAnalysisContent?.toLowerCase().includes("gcash") || audioAnalysisContent?.toLowerCase().includes("send money"))
-                        ? "Filipino individuals with access to mobile payment systems"
-                      : detectionResult.patternMatches["Payment upfront"]
+                      : hasContentCharacteristic("financial") && (audioAnalysisContent?.toLowerCase().includes("gcash") || audioAnalysisContent?.toLowerCase().includes("send money"))
+                        ? "Individuals with access to mobile payment systems"
+                      : hasContentCharacteristic("payment") || hasContentCharacteristic("money")
                         ? "Individuals with financial resources"
-                      : "General Filipino audience")
-                }</p>
-                {/* Add voice authenticity indicator if detected */}
-                {detectionResult.patternMatches["Voice authenticity concerns"] && (
+                      : "General audience")
+                }</p>                {/* Add voice authenticity indicator if detected */}
+                {hasContentCharacteristic("synthetic") || hasContentCharacteristic("artificial") || hasContentCharacteristic("generated") && (
                   <p className="text-sm mt-2 text-red-700 dark:text-red-400 font-medium">
                     ⚠️ <strong>Voice Authenticity Alert:</strong> This recording may contain synthetic or artificially generated speech.
                   </p>
@@ -764,27 +656,25 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
             {/* Voice characteristics section based on detector results */}
             <div className="mb-4 border-t border-purple-200 dark:border-purple-700 pt-4">
               <h4 className="text-md font-semibold mb-2 text-purple-700 dark:text-purple-300">Voice Characteristics:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                {/* Voice authenticity */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">                {/* Voice authenticity */}
                 <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
                   <span className="font-medium">Voice Authenticity:</span>{" "}
-                  {detectionResult.patternMatches["Voice authenticity concerns"] 
+                  {hasContentCharacteristic("synthetic") || hasContentCharacteristic("artificial") 
                     ? "⚠️ Potential synthetic or artificially generated speech detected" 
                     : "✓ No synthetic voice patterns detected"}
                 </div>
                 
                 {/* Communication intent */}
                 <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
-                  <span className="font-medium">Communication Intent:</span>{" "}
-                  {detectionResult.patternMatches["Voice message scam"] 
+                  <span className="font-medium">Communication Intent:</span>{" "}                  {hasContentCharacteristic("voice") || hasContentCharacteristic("message") 
                     ? "⚠️ Suspicious request or call to action" 
-                    : detectionResult.patternMatches["Emotional manipulation"]
+                    : hasContentCharacteristic("emotional") || hasContentCharacteristic("manipulation")
                       ? "⚠️ Emotional appeal or manipulation attempt"
-                    : detectionResult.patternMatches["Urgent action required"]
+                    : hasContentCharacteristic("urgent") || hasContentCharacteristic("action")
                       ? "⚠️ Creating urgency or time pressure"
-                    : detectionResult.patternMatches["Information sharing"]
+                    : hasContentCharacteristic("information") || hasContentCharacteristic("sharing")
                       ? "✓ Information sharing or explanation"
-                    : detectionResult.patternMatches["Personal voice message"]
+                    : hasContentCharacteristic("personal") || hasContentCharacteristic("voice")
                       ? "✓ Personal or private communication" 
                       : "✓ General communication"}
                 </div>
@@ -800,13 +690,12 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                         ? "⚠️ Moderate risk - some concerning elements" 
                         : "✓ Low risk - normal communication patterns"}
                 </div>
-                
-                {/* Content reliability */}
+                  {/* Content reliability */}
                 <div className="p-2 rounded bg-purple-100/40 dark:bg-purple-900/30">
                   <span className="font-medium">Content Verification:</span>{" "}
-                  {detectionResult.patternMatches["Too good to be true"] || detectionResult.patternMatches["Investment opportunity"]
+                  {(hasContentCharacteristic("too good") || hasContentCharacteristic("guaranteed")) || hasContentCharacteristic("investment")
                     ? "⚠️ Contains claims that should be independently verified" 
-                    : detectionResult.patternMatches["Remittance scam"] || detectionResult.patternMatches["Financial information request"]
+                    : hasContentCharacteristic("remittance") || hasContentCharacteristic("financial") || hasContentCharacteristic("money")
                       ? "⚠️ Contains financial information or requests requiring verification"
                       : "✓ No specific claims requiring verification detected"}
                 </div>
@@ -870,23 +759,21 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                   <li className="text-red-700 dark:text-red-400">
                     <strong>Warning:</strong> This voice recording shows {finalRiskPercentage >= 75 ? "multiple" : "some"} concerning patterns commonly found in voice message scams.
                   </li>
-                )}
-                {(detectionResult.patternMatches["Payment upfront"] || detectionResult.patternMatches["Financial information request"] || detectionResult.patternMatches["Remittance scam"]) && (
+                )}                {(hasContentCharacteristic("payment") || hasContentCharacteristic("financial") || hasContentCharacteristic("remittance")) && (
                   <li className="text-red-700 dark:text-red-400">
                     <strong>Financial Alert:</strong> Never send money or share financial details based solely on a voice recording request.
                   </li>
                 )}
-                {detectionResult.patternMatches["Voice authenticity concerns"] && (
+                {(hasContentCharacteristic("synthetic") || hasContentCharacteristic("artificial")) && (
                   <li className="text-red-700 dark:text-red-400">
                     <strong>Authenticity Concern:</strong> This may be a synthetic or AI-generated voice. Confirm identity through other means.
                   </li>
                 )}
-                {detectionResult.patternMatches["Investment opportunity"] && (
+                {hasContentCharacteristic("investment") && (
                   <li className="text-red-700 dark:text-red-400">
                     <strong>Investment Warning:</strong> Be extremely cautious of investment opportunities presented in voice messages.
                   </li>
-                )}
-                {finalRiskPercentage < 25 && !detectionResult.patternMatches["Voice message scam"] && !detectionResult.patternMatches["Financial information request"] && (
+                )}                {finalRiskPercentage < 25 && !(hasContentCharacteristic("voice") || hasContentCharacteristic("message")) && !(hasContentCharacteristic("financial") || hasContentCharacteristic("money")) && (
                   <li className="text-green-700 dark:text-green-400">
                     <strong>Low Risk Assessment:</strong> This voice recording appears to be a normal communication without concerning elements.
                   </li>
@@ -1091,16 +978,15 @@ export default function ResultsDisplay({ analysisResult, scamContent }: ResultsD
                   <li>Background noise consistency: {isAudioClearlyScam ? "Suspicious variations detected" : "Normal levels"}</li>
                   <li>Voice modulation: {isAudioClearlyScam ? "Potential artificial manipulation" : "Natural speaking patterns"}</li>
                   <li>Content consistency: {isAudioClearlyScam ? "Contains logical inconsistencies" : "Logically consistent"}</li>
-                  {isAudioClearlyScam && <li>Urgency tactics: Present - creating artificial time pressure</li>}
-                  {/* Filipino investment scam specific factors */}
-                  {detectionResult.patternMatches["Filipino investment scam"] && (
+                  {isAudioClearlyScam && <li>Urgency tactics: Present - creating artificial time pressure</li>}                  {/* Filipino investment scam specific factors */}
+                  {(hasContentCharacteristic("filipino") && hasContentCharacteristic("investment")) && (
                     <>
                       <li>Investment fraud patterns: Detected typical Filipino investment scam terms</li>
                       <li>Risk-free claims: Suspicious guarantees of no-risk investments</li>
                       <li>Limited slot tactics: Creating false scarcity</li>
                     </>
                   )}
-                  {detectionResult.patternMatches["Investment opportunity"] && !detectionResult.patternMatches["Filipino investment scam"] && (
+                  {hasContentCharacteristic("investment") && !(hasContentCharacteristic("filipino") && hasContentCharacteristic("investment")) && (
                     <li>Investment fraud patterns: Contains suspicious investment terminology</li>
                   )}
                 </ul>

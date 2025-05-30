@@ -18,8 +18,11 @@ class ResponseCache {
   private cache = new Map<string, CacheEntry>();
   private readonly defaultTTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly maxCacheSize = 1000; // Maximum number of cached entries
+  private readonly cleanupThreshold = 0.8; // Clean up when cache reaches 80% capacity
+  private readonly cleanupBatchSize = 0.2; // Remove 20% of entries during cleanup
   private cacheHits = 0;
   private cacheMisses = 0;
+  private operationCount = 0; // Track operations for deterministic cleanup timing
 
   // Generate a hash key for the query parameters
   private generateKey(content: string, imageBase64?: string, audioBase64?: string): string {
@@ -38,25 +41,49 @@ class ResponseCache {
   private isValid(entry: CacheEntry): boolean {
     return Date.now() - entry.timestamp < entry.ttl;
   }
-
-  // Clean up expired entries
+  // Clean up expired entries and manage cache size deterministically
   private cleanup(): void {
     const now = Date.now();
+    let removedExpired = 0;
+    
+    // First pass: Remove all expired entries
     for (const [key, entry] of this.cache.entries()) {
       if (now - entry.timestamp >= entry.ttl) {
         this.cache.delete(key);
+        removedExpired++;
       }
     }
-
-    // If cache is still too large, remove oldest entries
+    
+    console.log(`🧹 Removed ${removedExpired} expired entries from cache`);
+    
+    // Second pass: If cache is still over capacity, remove oldest entries
     if (this.cache.size > this.maxCacheSize) {
       const entries = Array.from(this.cache.entries());
+      // Sort by timestamp (oldest first) for deterministic removal
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      const toRemove = entries.slice(0, this.cache.size - this.maxCacheSize);
-      toRemove.forEach(([key]) => this.cache.delete(key));
+      
+      const entriesToRemove = this.cache.size - this.maxCacheSize;
+      const removedEntries = entries.slice(0, entriesToRemove);
+      
+      removedEntries.forEach(([key]) => this.cache.delete(key));
+      console.log(`🧹 Removed ${entriesToRemove} oldest entries to maintain cache size limit`);
     }
   }
-  // Get cached response
+
+  // Perform maintenance check - deterministic based on cache size and operation count
+  private performMaintenanceCheck(): void {
+    this.operationCount++;
+    
+    // Check if we need cleanup based on deterministic conditions
+    const shouldCleanup = 
+      this.cache.size >= Math.floor(this.maxCacheSize * this.cleanupThreshold) || // Cache is 80% full
+      this.operationCount % 100 === 0; // Every 100 operations for regular maintenance
+    
+    if (shouldCleanup) {
+      this.cleanup();
+      console.log(`🧹 Deterministic cache cleanup performed (size: ${this.cache.size}/${this.maxCacheSize}, operations: ${this.operationCount})`);
+    }
+  }  // Get cached response
   get(content: string, imageBase64?: string, audioBase64?: string): any | null {
     const key = this.generateKey(content, imageBase64, audioBase64);
     const entry = this.cache.get(key);
@@ -64,6 +91,8 @@ class ResponseCache {
     if (entry && this.isValid(entry)) {
       this.cacheHits++;
       console.log('Cache hit for query:', content.substring(0, 100) + '...');
+      // Perform maintenance check on every cache operation
+      this.performMaintenanceCheck();
       return entry.data;
     }
     
@@ -73,9 +102,10 @@ class ResponseCache {
       this.cache.delete(key);
     }
     
+    // Perform maintenance check on every cache operation
+    this.performMaintenanceCheck();
     return null;
-  }
-  // Store response in cache
+  }  // Store response in cache
   set(content: string, data: any, imageBase64?: string, audioBase64?: string, ttl?: number): void {
     const key = this.generateKey(content, imageBase64, audioBase64);
     const entry: CacheEntry = {
@@ -88,11 +118,8 @@ class ResponseCache {
     const contentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
     console.log('💾 Cached response for query:', contentPreview);
     
-    // Perform cleanup periodically
-    if (Math.random() < 0.1) { // 10% chance on each set operation
-      this.cleanup();
-      console.log('🧹 Cache cleanup performed');
-    }
+    // Perform deterministic maintenance check after every set operation
+    this.performMaintenanceCheck();
   }
   // Get cache statistics
   getStats(): { size: number; maxSize: number; hitRate: number; totalRequests: number; hits: number; misses: number } {
@@ -107,12 +134,12 @@ class ResponseCache {
       hits: this.cacheHits,
       misses: this.cacheMisses
     };
-  }
-  // Clear cache manually
+  }  // Clear cache manually
   clear(): void {
     this.cache.clear();
     this.cacheHits = 0;
     this.cacheMisses = 0;
+    this.operationCount = 0;
     console.log('Cache cleared and statistics reset');
   }
 
@@ -120,6 +147,7 @@ class ResponseCache {
   resetStats(): void {
     this.cacheHits = 0;
     this.cacheMisses = 0;
+    this.operationCount = 0;
     console.log('Cache statistics reset');
   }
 }
@@ -304,9 +332,11 @@ Ensure your entire response is ONLY the JSON object, with no additional text, co
       generationConfig: {
         temperature: 0,
         topK: 1,
-        topP: 0.1,
+        topP: 0,
         maxOutputTokens: 8192,
-        candidateCount: 1
+        candidateCount: 1,
+        stopSequences: [],
+        responseMimeType: "application/json"
       }
     };
 
@@ -500,9 +530,11 @@ ${content}
       generationConfig: {
         temperature: 0,
         topK: 1,
-        topP: 0.1,
+        topP: 0,
         maxOutputTokens: 8192,
-        candidateCount: 1
+        candidateCount: 1,
+        stopSequences: [],
+        responseMimeType: "application/json"
       }
     };
 
