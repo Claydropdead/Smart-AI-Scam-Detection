@@ -1,10 +1,131 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 // API key is now expected to be in an environment variable
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // Construct the URL only if the API key is present
 // Updated to use gemini-2.0-flash model for improved performance and capabilities
 const GEMINI_API_URL = GEMINI_API_KEY ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}` : '';
+
+// In-memory cache with TTL (Time To Live)
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+}
+
+class ResponseCache {
+  private cache = new Map<string, CacheEntry>();
+  private readonly defaultTTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  private readonly maxCacheSize = 1000; // Maximum number of cached entries
+  private cacheHits = 0;
+  private cacheMisses = 0;
+
+  // Generate a hash key for the query parameters
+  private generateKey(content: string, imageBase64?: string, audioBase64?: string): string {
+    const data = {
+      content: content.trim(),
+      hasImage: !!imageBase64,
+      hasAudio: !!audioBase64,
+      // Include hashes of binary data to detect differences without storing full data
+      imageHash: imageBase64 ? crypto.createHash('sha256').update(imageBase64).digest('hex').substring(0, 16) : null,
+      audioHash: audioBase64 ? crypto.createHash('sha256').update(audioBase64).digest('hex').substring(0, 16) : null
+    };
+    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+  }
+
+  // Check if cache entry is still valid
+  private isValid(entry: CacheEntry): boolean {
+    return Date.now() - entry.timestamp < entry.ttl;
+  }
+
+  // Clean up expired entries
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp >= entry.ttl) {
+        this.cache.delete(key);
+      }
+    }
+
+    // If cache is still too large, remove oldest entries
+    if (this.cache.size > this.maxCacheSize) {
+      const entries = Array.from(this.cache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.slice(0, this.cache.size - this.maxCacheSize);
+      toRemove.forEach(([key]) => this.cache.delete(key));
+    }
+  }
+  // Get cached response
+  get(content: string, imageBase64?: string, audioBase64?: string): any | null {
+    const key = this.generateKey(content, imageBase64, audioBase64);
+    const entry = this.cache.get(key);
+    
+    if (entry && this.isValid(entry)) {
+      this.cacheHits++;
+      console.log('Cache hit for query:', content.substring(0, 100) + '...');
+      return entry.data;
+    }
+    
+    this.cacheMisses++;
+    if (entry) {
+      // Remove expired entry
+      this.cache.delete(key);
+    }
+    
+    return null;
+  }
+  // Store response in cache
+  set(content: string, data: any, imageBase64?: string, audioBase64?: string, ttl?: number): void {
+    const key = this.generateKey(content, imageBase64, audioBase64);
+    const entry: CacheEntry = {
+      data,
+      timestamp: Date.now(),
+      ttl: ttl || this.defaultTTL
+    };
+    
+    this.cache.set(key, entry);
+    const contentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
+    console.log('💾 Cached response for query:', contentPreview);
+    
+    // Perform cleanup periodically
+    if (Math.random() < 0.1) { // 10% chance on each set operation
+      this.cleanup();
+      console.log('🧹 Cache cleanup performed');
+    }
+  }
+  // Get cache statistics
+  getStats(): { size: number; maxSize: number; hitRate: number; totalRequests: number; hits: number; misses: number } {
+    const totalRequests = this.cacheHits + this.cacheMisses;
+    const hitRate = totalRequests > 0 ? (this.cacheHits / totalRequests) * 100 : 0;
+    
+    return {
+      size: this.cache.size,
+      maxSize: this.maxCacheSize,
+      hitRate: Number(hitRate.toFixed(2)),
+      totalRequests,
+      hits: this.cacheHits,
+      misses: this.cacheMisses
+    };
+  }
+  // Clear cache manually
+  clear(): void {
+    this.cache.clear();
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    console.log('Cache cleared and statistics reset');
+  }
+
+  // Reset statistics only
+  resetStats(): void {
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    console.log('Cache statistics reset');
+  }
+}
+
+// Global cache instance
+const responseCache = new ResponseCache();
 
 interface ReportAgency {
   name: string;
@@ -459,6 +580,14 @@ export async function POST(request: NextRequest) {
     
     // Use empty string if content is not provided but image/audio is
     const textContent = content || '';
+      // Check cache first
+    const cachedResponse = responseCache.get(textContent, imageBase64, audioBase64);
+    if (cachedResponse) {
+      console.log('✅ Returning cached response - skipping API call');
+      return NextResponse.json(cachedResponse);
+    }
+    
+    console.log('🔄 Cache miss - proceeding with API analysis');
     
     try {      let analysis;      if (audioBase64) {
         // Handle audio analysis using the same approach as text/image analysis
@@ -687,9 +816,11 @@ export async function POST(request: NextRequest) {
                 url: "https://www.ic3.gov",
                 description: "For reporting internet-related criminal complaints in the US."
               }
-            ]
-        }
+            ]        }
       };
+      
+      // Cache the successful response before returning
+      responseCache.set(textContent, formattedResponse, imageBase64, audioBase64);
       
       return NextResponse.json(formattedResponse, { status: 200 });
     } catch (processingError: any) {
@@ -734,5 +865,39 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in /api/detect-scam:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+// Cache management endpoints
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get('action');
+
+  switch (action) {
+    case 'stats':
+      const stats = responseCache.getStats();
+      return NextResponse.json({
+        cache: stats,
+        message: `Cache contains ${stats.size} entries (max: ${stats.maxSize}). Hit rate: ${stats.hitRate}%`
+      });
+    
+    case 'clear':
+      responseCache.clear();
+      return NextResponse.json({ message: 'Cache cleared successfully and statistics reset' });
+    
+    case 'reset-stats':
+      responseCache.resetStats();
+      return NextResponse.json({ message: 'Cache statistics reset successfully' });
+    
+    default:
+      return NextResponse.json({ 
+        message: 'Cache management endpoint',
+        availableActions: ['stats', 'clear', 'reset-stats'],
+        usage: {
+          stats: '/api/detect-scam?action=stats',
+          clear: '/api/detect-scam?action=clear',
+          'reset-stats': '/api/detect-scam?action=reset-stats'
+        }
+      });
   }
 }
