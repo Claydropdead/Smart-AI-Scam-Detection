@@ -172,16 +172,21 @@ Provide a structured JSON response with the following fields:
         - "authenticityIndicators": array of strings (Evidence supporting your authenticity assessment)
         - "confidenceLevel": string (Confidence in your synthetic voice assessment: "Low", "Medium", or "High")
 
-Ensure your entire response is ONLY the JSON object, with no additional text, comments, or markdown formatting like \`\`\`json ... \`\`\` around it. The JSON must be properly formatted with all string values properly escaped. Each required field must be present in your response even if some have minimal information due to audio limitations or ambiguity.`;
-
-  try {
+Ensure your entire response is ONLY the JSON object, with no additional text, comments, or markdown formatting like \`\`\`json ... \`\`\` around it. The JSON must be properly formatted with all string values properly escaped. Each required field must be present in your response even if some have minimal information due to audio limitations or ambiguity.`;  try {
     // Prepare the request body
     const requestBody: any = {
       contents: [{
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        temperature: 0,
+        topK: 1,
+        topP: 0.1,
+        maxOutputTokens: 8192,
+        candidateCount: 1
+      }
     };
 
     // Add audio data to the request
@@ -363,16 +368,21 @@ Ensure your entire response is ONLY the JSON object, with no additional text, co
 Text to analyze:
 """
 ${content}
-"""`;
-
-  try {
+"""`;  try {
     // Prepare the request body
     const requestBody: any = {
       contents: [{
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        temperature: 0,
+        topK: 1,
+        topP: 0.1,
+        maxOutputTokens: 8192,
+        candidateCount: 1
+      }
     };
 
     // If image is provided, add it to the request
